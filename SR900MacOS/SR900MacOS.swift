@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct SR900_SlidingPanels: App {
+struct SR900MacOS: App {
     init() {
         // Register custom fonts for macOS
         registerCustomFonts()

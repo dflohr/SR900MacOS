@@ -24,33 +24,28 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		D6D2AC222EB3850F00434203 /* SR900_SlidingPanels.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SR900_SlidingPanels.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		D6D2AC2F2EB3851000434203 /* SR900_SlidingPanelsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SR900_SlidingPanelsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		D6D2AC392EB3851000434203 /* SR900_SlidingPanelsUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SR900_SlidingPanelsUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D6D2AC222EB3850F00434203 /* SR900MacOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SR900MacOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D6D2AC2F2EB3851000434203 /* SR900MacOSTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SR900MacOSTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D6D2AC392EB3851000434203 /* SR900MacOSUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SR900MacOSUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		D6D2ACC52EB3DBBB00434203 /* Exceptions for "SR900_SlidingPanels" folder in "SR900_SlidingPanels" target */ = {
+		D6D2ACC52EB3DBBB00434203 /* Exceptions for "SR900MacOS" folder in "SR900MacOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = D6D2AC212EB3850F00434203 /* SR900_SlidingPanels */;
+			target = D6D2AC212EB3850F00434203 /* SR900MacOS */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		D6D2AC242EB3850F00434203 /* SR900_SlidingPanels */ = {
+		D6D2AC242EB3850F00434203 /* SR900MacOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				D6D2ACC52EB3DBBB00434203 /* Exceptions for "SR900_SlidingPanels" folder in "SR900_SlidingPanels" target */,
+				D6D2ACC52EB3DBBB00434203 /* Exceptions for "SR900MacOS" folder in "SR900MacOS" target */,
 			);
-			path = SR900_SlidingPanels;
-			sourceTree = "<group>";
-		};
-		D6D2AC3C2EB3851000434203 /* SR900_SlidingPanelsUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SR900_SlidingPanelsUITests;
+			path = SR900MacOS;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -83,8 +78,7 @@
 		D6D2AC192EB3850F00434203 = {
 			isa = PBXGroup;
 			children = (
-				D6D2AC242EB3850F00434203 /* SR900_SlidingPanels */,
-				D6D2AC3C2EB3851000434203 /* SR900_SlidingPanelsUITests */,
+				D6D2AC242EB3850F00434203 /* SR900MacOS */,
 				D6D2AC232EB3850F00434203 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -92,9 +86,9 @@
 		D6D2AC232EB3850F00434203 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				D6D2AC222EB3850F00434203 /* SR900_SlidingPanels.app */,
-				D6D2AC2F2EB3851000434203 /* SR900_SlidingPanelsTests.xctest */,
-				D6D2AC392EB3851000434203 /* SR900_SlidingPanelsUITests.xctest */,
+				D6D2AC222EB3850F00434203 /* SR900MacOS.app */,
+				D6D2AC2F2EB3851000434203 /* SR900MacOSTests.xctest */,
+				D6D2AC392EB3851000434203 /* SR900MacOSUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -102,9 +96,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		D6D2AC212EB3850F00434203 /* SR900_SlidingPanels */ = {
+		D6D2AC212EB3850F00434203 /* SR900MacOS */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D6D2AC432EB3851000434203 /* Build configuration list for PBXNativeTarget "SR900_SlidingPanels" */;
+			buildConfigurationList = D6D2AC432EB3851000434203 /* Build configuration list for PBXNativeTarget "SR900MacOS" */;
 			buildPhases = (
 				D6D2AC1E2EB3850F00434203 /* Sources */,
 				D6D2AC1F2EB3850F00434203 /* Frameworks */,
@@ -115,18 +109,18 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				D6D2AC242EB3850F00434203 /* SR900_SlidingPanels */,
+				D6D2AC242EB3850F00434203 /* SR900MacOS */,
 			);
-			name = SR900_SlidingPanels;
+			name = SR900MacOS;
 			packageProductDependencies = (
 			);
 			productName = SR900_SlidingPanels;
-			productReference = D6D2AC222EB3850F00434203 /* SR900_SlidingPanels.app */;
+			productReference = D6D2AC222EB3850F00434203 /* SR900MacOS.app */;
 			productType = "com.apple.product-type.application";
 		};
-		D6D2AC2E2EB3851000434203 /* SR900_SlidingPanelsTests */ = {
+		D6D2AC2E2EB3851000434203 /* SR900MacOSTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D6D2AC462EB3851000434203 /* Build configuration list for PBXNativeTarget "SR900_SlidingPanelsTests" */;
+			buildConfigurationList = D6D2AC462EB3851000434203 /* Build configuration list for PBXNativeTarget "SR900MacOSTests" */;
 			buildPhases = (
 				D6D2AC2B2EB3851000434203 /* Sources */,
 				D6D2AC2C2EB3851000434203 /* Frameworks */,
@@ -137,16 +131,16 @@
 			dependencies = (
 				D6D2AC312EB3851000434203 /* PBXTargetDependency */,
 			);
-			name = SR900_SlidingPanelsTests;
+			name = SR900MacOSTests;
 			packageProductDependencies = (
 			);
 			productName = SR900_SlidingPanelsTests;
-			productReference = D6D2AC2F2EB3851000434203 /* SR900_SlidingPanelsTests.xctest */;
+			productReference = D6D2AC2F2EB3851000434203 /* SR900MacOSTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		D6D2AC382EB3851000434203 /* SR900_SlidingPanelsUITests */ = {
+		D6D2AC382EB3851000434203 /* SR900MacOSUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = D6D2AC492EB3851000434203 /* Build configuration list for PBXNativeTarget "SR900_SlidingPanelsUITests" */;
+			buildConfigurationList = D6D2AC492EB3851000434203 /* Build configuration list for PBXNativeTarget "SR900MacOSUITests" */;
 			buildPhases = (
 				D6D2AC352EB3851000434203 /* Sources */,
 				D6D2AC362EB3851000434203 /* Frameworks */,
@@ -157,14 +151,11 @@
 			dependencies = (
 				D6D2AC3B2EB3851000434203 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				D6D2AC3C2EB3851000434203 /* SR900_SlidingPanelsUITests */,
-			);
-			name = SR900_SlidingPanelsUITests;
+			name = SR900MacOSUITests;
 			packageProductDependencies = (
 			);
 			productName = SR900_SlidingPanelsUITests;
-			productReference = D6D2AC392EB3851000434203 /* SR900_SlidingPanelsUITests.xctest */;
+			productReference = D6D2AC392EB3851000434203 /* SR900MacOSUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -190,7 +181,7 @@
 					};
 				};
 			};
-			buildConfigurationList = D6D2AC1D2EB3850F00434203 /* Build configuration list for PBXProject "SR900_SlidingPanels" */;
+			buildConfigurationList = D6D2AC1D2EB3850F00434203 /* Build configuration list for PBXProject "SR900MacOS" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -204,9 +195,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				D6D2AC212EB3850F00434203 /* SR900_SlidingPanels */,
-				D6D2AC2E2EB3851000434203 /* SR900_SlidingPanelsTests */,
-				D6D2AC382EB3851000434203 /* SR900_SlidingPanelsUITests */,
+				D6D2AC212EB3850F00434203 /* SR900MacOS */,
+				D6D2AC2E2EB3851000434203 /* SR900MacOSTests */,
+				D6D2AC382EB3851000434203 /* SR900MacOSUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -262,12 +253,12 @@
 /* Begin PBXTargetDependency section */
 		D6D2AC312EB3851000434203 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D6D2AC212EB3850F00434203 /* SR900_SlidingPanels */;
+			target = D6D2AC212EB3850F00434203 /* SR900MacOS */;
 			targetProxy = D6D2AC302EB3851000434203 /* PBXContainerItemProxy */;
 		};
 		D6D2AC3B2EB3851000434203 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = D6D2AC212EB3850F00434203 /* SR900_SlidingPanels */;
+			target = D6D2AC212EB3850F00434203 /* SR900MacOS */;
 			targetProxy = D6D2AC3A2EB3851000434203 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -404,7 +395,17 @@
 				DEVELOPMENT_TEAM = ZV8A655DV9;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = YES;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SR900_SlidingPanels/Info.plist;
@@ -415,7 +416,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = Home.SR900_SlidingPanels;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.roast-tech.SR900MacOS";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -438,7 +439,17 @@
 				DEVELOPMENT_TEAM = ZV8A655DV9;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = YES;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SR900_SlidingPanels/Info.plist;
@@ -449,7 +460,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = Home.SR900_SlidingPanels;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.roast-tech.SR900MacOS";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -478,7 +489,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SR900_SlidingPanels.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SR900_SlidingPanels";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SR900MacOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SR900MacOS";
 			};
 			name = Debug;
 		};
@@ -499,7 +510,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SR900_SlidingPanels.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SR900_SlidingPanels";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/SR900MacOS.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/SR900MacOS";
 			};
 			name = Release;
 		};
@@ -544,7 +555,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		D6D2AC1D2EB3850F00434203 /* Build configuration list for PBXProject "SR900_SlidingPanels" */ = {
+		D6D2AC1D2EB3850F00434203 /* Build configuration list for PBXProject "SR900MacOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D6D2AC412EB3851000434203 /* Debug */,
@@ -553,7 +564,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D6D2AC432EB3851000434203 /* Build configuration list for PBXNativeTarget "SR900_SlidingPanels" */ = {
+		D6D2AC432EB3851000434203 /* Build configuration list for PBXNativeTarget "SR900MacOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D6D2AC442EB3851000434203 /* Debug */,
@@ -562,7 +573,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D6D2AC462EB3851000434203 /* Build configuration list for PBXNativeTarget "SR900_SlidingPanelsTests" */ = {
+		D6D2AC462EB3851000434203 /* Build configuration list for PBXNativeTarget "SR900MacOSTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D6D2AC472EB3851000434203 /* Debug */,
@@ -571,7 +582,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		D6D2AC492EB3851000434203 /* Build configuration list for PBXNativeTarget "SR900_SlidingPanelsUITests" */ = {
+		D6D2AC492EB3851000434203 /* Build configuration list for PBXNativeTarget "SR900MacOSUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				D6D2AC4A2EB3851000434203 /* Debug */,
