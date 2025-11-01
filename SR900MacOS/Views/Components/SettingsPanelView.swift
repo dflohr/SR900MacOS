@@ -1,9 +1,20 @@
+//
+//  SettingsPanelView.swift
+//  SR900MacOS
+//
+//  Created by Nisarg Mangukiya on 01/11/25.
+//
+
+
 import SwiftUI
 
 struct SettingsPanelView: View {
     @Binding var rectangle2Extended: Bool
     @Binding var rectangle3Extended: Bool
     @Binding var rectangle4Extended: Bool
+    let onGraphButtonPressed: (() -> Void)?
+    let onProfilesButtonPressed: (() -> Void)?
+    let onSettingsButtonPressed: (() -> Void)?
     
     @State private var temperatureIsFahrenheit = true
     @State private var thermistorIsExternal = true
@@ -17,20 +28,20 @@ struct SettingsPanelView: View {
         ZStack(alignment: .topLeading) {
             
             // Left black frame
-            Rectangle()
-                .fill(Color.black)
-                .frame(width: 350, height: 768)
+//            Rectangle()
+//                .fill(Color.black)
+//                .frame(width: 350, height: 768)
             
             // Inner light panel
-            Rectangle()
-                .fill(Color(red: 0.93, green: 0.93, blue: 0.93))
-                .frame(width: 310, height: 690)
-                .overlay(
-                    VStack(spacing: 18) {
+//            Rectangle()
+//                .fill(Color(red: 0.93, green: 0.93, blue: 0.93))
+//                .frame(width: 310, height: 690)
+//                .overlay(
+            VStack(spacing:25) {
                         
-                        Text("SETTINGS")
-                            .font(.openSansBold(size: 22))
-                            .padding(.top, 15)
+//                        Text("SETTINGS")
+//                            .font(.openSansBold(size: 22))
+//                            .padding(.top, 15)
                         
                         // ✅ Temperature Section
                         ToggleButtonRow(
@@ -73,10 +84,13 @@ struct SettingsPanelView: View {
 
                         Spacer()
                     }
-                    .padding(.horizontal, 14)
-                )
-                .offset(x: 22, y: 60)
+//                    .padding(50)
+                    .padding(.horizontal, 50)
+                    .padding(.top, 180)
+
+//                )
+//                .offset(x: 22, y: 60)
         }
-        .frame(width: width, height: 768)
+//        .frame(width: width, height: 768)
     }
 }

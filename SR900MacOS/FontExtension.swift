@@ -1,6 +1,5 @@
 //
 //  FontExtension.swift
-//  UI Test
 //
 //  Created for OpenSans font support
 //

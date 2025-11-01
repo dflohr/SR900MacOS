@@ -12,24 +12,20 @@ struct ConnectionSection: View {
     @ObservedObject var controlState: MainControlState
     
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                BLEConnectButton(controlState: controlState)
-                    .offset(y: 4)
-                
-                USBConnectButton(controlState: controlState)
-                    .offset(x: -6, y: 4)
-                
-                ConnectionActivityButton(controlState: controlState)
-                    .offset(x: -4, y: 4)
-                
-                Spacer()
-            }
-            .padding(.top, 4)
-            .padding(.horizontal, 6)
+        HStack(spacing: 6) {
+            BLEConnectButton(controlState: controlState)
+            Spacer()
+            USBConnectButton(controlState: controlState)
+            Spacer()
+            ConnectionActivityButton(controlState: controlState)
+//            Spacer()
         }
+        .frame(height: 55) // ✅ unified height
+        .padding(.top, 15)
+        .padding(.horizontal, 15)
     }
 }
+
 
 // MARK: - BLE Connect Button
 struct BLEConnectButton: View {
@@ -46,7 +42,7 @@ struct BLEConnectButton: View {
                     .scaledToFit()
                     .frame(width: 26, height: 26)
                     .padding(.leading, 10)
-                
+
                 Text("BLE Connect")
                     .font(.openSansBold(size: 14))
                     .foregroundColor(.black)
@@ -54,9 +50,9 @@ struct BLEConnectButton: View {
                     .multilineTextAlignment(.center)
                     .lineSpacing(6)
                     .offset(x: -4)
-                
+
                 Spacer()
-                
+
                 ConnectionIndicator(isConnected: controlState.isConnected)
             }
             .padding(.leading, 0)
@@ -67,8 +63,10 @@ struct BLEConnectButton: View {
                     .stroke(Color.black, lineWidth: 2)
             )
         }
+        .buttonStyle(PlainButtonStyle())// ✅ removes default rounded button style
     }
 }
+
 
 // MARK: - USB Connect Button
 struct USBConnectButton: View {
@@ -104,6 +102,7 @@ struct USBConnectButton: View {
                     .stroke(Color.black, lineWidth: 2)
             )
         }
+        .buttonStyle(PlainButtonStyle())// ✅ removes default rounded button style
     }
 }
 
@@ -134,6 +133,7 @@ struct ConnectionActivityButton: View {
                     .stroke(Color.black, lineWidth: 2)
             )
         }
+        .buttonStyle(PlainButtonStyle())// ✅ removes default rounded button style
     }
 }
 
