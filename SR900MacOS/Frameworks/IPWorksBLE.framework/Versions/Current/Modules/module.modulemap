@@ -1,0 +1,11 @@
+framework module IPWorksBLE {
+  umbrella header "ipworksble.h"
+
+  export *
+  module * { export * }
+}
+
+module IPWorksBLE.Swift {
+  header "IPWorksBLE-Swift.h"
+  requires objc
+}

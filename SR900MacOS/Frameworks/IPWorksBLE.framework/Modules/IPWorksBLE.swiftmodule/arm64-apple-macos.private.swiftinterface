@@ -1,0 +1,265 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 5.7.2 (swiftlang-5.7.2.135.5 clang-1400.0.29.51)
+// swift-module-flags: -target arm64-apple-macos10.13 -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -module-name IPWorksBLE
+// swift-module-flags-ignorable: -enable-bare-slash-regex
+import Foundation
+@_exported import IPWorksBLE
+import Swift
+import _Concurrency
+import _StringProcessing
+public protocol BLEClientDelegate {
+  func onAdvertisement(serverId: Swift.String, name: Swift.String, rssi: Swift.Int32, txPower: Swift.Int32, serviceUuids: Swift.String, servicesWithData: Swift.String, solicitedServiceUuids: Swift.String, manufacturerCompanyId: Swift.Int32, manufacturerData: Foundation.Data, isConnectable: Swift.Bool, isScanResponse: Swift.Bool)
+  func onConnected(statusCode: Swift.Int32, description: Swift.String)
+  func onDisconnected(statusCode: Swift.Int32, description: Swift.String)
+  func onDiscovered(gattType: Swift.Int32, serviceId: Swift.String, characteristicId: Swift.String, descriptorId: Swift.String, uuid: Swift.String, description: Swift.String)
+  func onError(errorCode: Swift.Int32, description: Swift.String)
+  func onLog(logLevel: Swift.Int32, message: Swift.String, logType: Swift.String)
+  func onPairingRequest(serverId: Swift.String, pairingKind: Swift.Int32, pin: inout Swift.String, accept: inout Swift.Bool)
+  func onServerUpdate(name: Swift.String, changedServices: Swift.String)
+  func onStartScan(serviceUuids: Swift.String)
+  func onStopScan(errorCode: Swift.Int32, errorDescription: Swift.String)
+  func onSubscribed(serviceId: Swift.String, characteristicId: Swift.String, uuid: Swift.String, description: Swift.String)
+  func onUnsubscribed(serviceId: Swift.String, characteristicId: Swift.String, uuid: Swift.String, description: Swift.String)
+  func onValue(serviceId: Swift.String, characteristicId: Swift.String, descriptorId: Swift.String, uuid: Swift.String, description: Swift.String, value: Foundation.Data)
+  func onWriteResponse(serviceId: Swift.String, characteristicId: Swift.String, descriptorId: Swift.String, uuid: Swift.String, description: Swift.String)
+}
+@objc @_inheritsConvenienceInitializers public class BLEClient : ObjectiveC.NSObject, IPWorksBLE.IPWorksBLEBLEClientDelegate {
+  @objc override dynamic public init()
+  public init(runtimeLicense: Swift.String?, delegate: IPWorksBLE.BLEClientDelegate?)
+  @objc deinit
+  public var delegate: IPWorksBLE.BLEClientDelegate? {
+    get
+    set
+  }
+  @objc public func onAdvertisement(_ serverId: Swift.String!, _ name: Swift.String!, _ rssi: Swift.Int32, _ txPower: Swift.Int32, _ serviceUuids: Swift.String!, _ servicesWithData: Swift.String!, _ solicitedServiceUuids: Swift.String!, _ manufacturerCompanyId: Swift.Int32, _ manufacturerData: Foundation.Data!, _ isConnectable: Swift.Bool, _ isScanResponse: Swift.Bool)
+  @objc public func onConnected(_ statusCode: Swift.Int32, _ description: Swift.String!)
+  @objc public func onDisconnected(_ statusCode: Swift.Int32, _ description: Swift.String!)
+  @objc public func onDiscovered(_ gattType: Swift.Int32, _ serviceId: Swift.String!, _ characteristicId: Swift.String!, _ descriptorId: Swift.String!, _ uuid: Swift.String!, _ description: Swift.String!)
+  @objc public func onError(_ errorCode: Swift.Int32, _ description: Swift.String!)
+  @objc public func onLog(_ logLevel: Swift.Int32, _ message: Swift.String!, _ logType: Swift.String!)
+  @objc public func onPairingRequest(_ serverId: Swift.String!, _ pairingKind: Swift.Int32, _ pin: Swift.AutoreleasingUnsafeMutablePointer<Foundation.NSString?>, _ accept: Swift.UnsafeMutablePointer<Swift.Int32>)
+  @objc public func onServerUpdate(_ name: Swift.String!, _ changedServices: Swift.String!)
+  @objc public func onStartScan(_ serviceUuids: Swift.String!)
+  @objc public func onStopScan(_ errorCode: Swift.Int32, _ errorDescription: Swift.String!)
+  @objc public func onSubscribed(_ serviceId: Swift.String!, _ characteristicId: Swift.String!, _ uuid: Swift.String!, _ description: Swift.String!)
+  @objc public func onUnsubscribed(_ serviceId: Swift.String!, _ characteristicId: Swift.String!, _ uuid: Swift.String!, _ description: Swift.String!)
+  @objc public func onValue(_ serviceId: Swift.String!, _ characteristicId: Swift.String!, _ descriptorId: Swift.String!, _ uuid: Swift.String!, _ description: Swift.String!, _ value: Foundation.Data!)
+  @objc public func onWriteResponse(_ serviceId: Swift.String!, _ characteristicId: Swift.String!, _ descriptorId: Swift.String!, _ uuid: Swift.String!, _ description: Swift.String!)
+  public var runtimeLicense: Swift.String {
+    get
+    set
+  }
+  public var VERSION: Swift.String {
+    get
+  }
+  public var activeScanning: Swift.Bool {
+    get
+    set
+  }
+  public var characteristic: Swift.String {
+    get
+    set
+  }
+  public var characteristics: IPWorksBLE.IPWorksBLEList<IPWorksBLE.Characteristic> {
+    get
+    set
+  }
+  public var descriptors: IPWorksBLE.IPWorksBLEReadonlyList<IPWorksBLE.Descriptor> {
+    get
+  }
+  public var scanning: Swift.Bool {
+    get
+  }
+  public var serverId: Swift.String {
+    get
+  }
+  public var serverName: Swift.String {
+    get
+  }
+  public var service: Swift.String {
+    get
+    set
+  }
+  public var services: IPWorksBLE.IPWorksBLEReadonlyList<IPWorksBLE.Service> {
+    get
+  }
+  public var timeout: Swift.Int32 {
+    get
+    set
+  }
+  public func checkCharacteristicSubscribed(index: Swift.Int32) throws -> Swift.Bool
+  public func config(configurationString: Swift.String) throws -> Swift.String
+  public func connect(serverId: Swift.String) throws
+  public func disconnect() throws
+  public func discover(serviceUuids: Swift.String, characteristicUuids: Swift.String, discoverDescriptors: Swift.Bool, includedByServiceId: Swift.String) throws
+  public func discoverCharacteristics(serviceId: Swift.String, characteristicUuids: Swift.String) throws
+  public func discoverDescriptors(serviceId: Swift.String, characteristicId: Swift.String) throws
+  public func discoverServices(serviceUuids: Swift.String, includedByServiceId: Swift.String) throws
+  public func doEvents() throws
+  public func postValue(serviceId: Swift.String, characteristicId: Swift.String, value: Foundation.Data) throws
+  public func queryCharacteristicCachedVal(index: Swift.Int32) throws -> Foundation.Data
+  public func queryDescriptorCachedVal(index: Swift.Int32) throws -> Foundation.Data
+  public func readValue(serviceId: Swift.String, characteristicId: Swift.String, descriptorId: Swift.String) throws -> Foundation.Data
+  public func select(serviceId: Swift.String, characteristicId: Swift.String) throws
+  public func startScanning(serviceUuids: Swift.String) throws
+  public func stopScanning() throws
+  public func subscribe(serviceId: Swift.String, characteristicId: Swift.String) throws
+  public func unsubscribe(serviceId: Swift.String, characteristicId: Swift.String) throws
+  public func writeValue(serviceId: Swift.String, characteristicId: Swift.String, descriptorId: Swift.String, value: Foundation.Data) throws
+}
+public enum ValueFormats : Swift.Int32 {
+  case vfUndefined
+  case vfBoolean
+  case vf2Bit
+  case vfNibble
+  case vfUInt8
+  case vfUInt12
+  case vfUInt16
+  case vfUInt24
+  case vfUInt32
+  case vfUInt48
+  case vfUInt64
+  case vfUInt128
+  case vfSInt8
+  case vfSInt12
+  case vfSInt16
+  case vfSInt24
+  case vfSInt32
+  case vfSInt48
+  case vfSInt64
+  case vfSInt128
+  case vfFloat32
+  case vfFloat64
+  case vfSFloat
+  case vfFloat
+  case vfDUInt16
+  case vfUtf8Str
+  case vfUtf16Str
+  case vfStruct
+  public init?(rawValue: Swift.Int32)
+  public typealias RawValue = Swift.Int32
+  public var rawValue: Swift.Int32 {
+    get
+  }
+}
+public class Characteristic {
+  public init()
+  public var canSubscribe: Swift.Bool {
+    get
+  }
+  public var description_: Swift.String {
+    get
+  }
+  public var flags: Swift.Int32 {
+    get
+  }
+  public var id: Swift.String {
+    get
+  }
+  public var userDescription: Swift.String {
+    get
+    set
+  }
+  public var uuid: Swift.String {
+    get
+  }
+  public var valueExponent: Swift.Int32 {
+    get
+  }
+  public var valueFormat: IPWorksBLE.ValueFormats {
+    get
+  }
+  public var valueFormatCount: Swift.Int32 {
+    get
+  }
+  public var valueFormatIndex: Swift.Int32 {
+    get
+    set
+  }
+  public var valueUnit: Swift.String {
+    get
+  }
+  @objc deinit
+}
+public class Descriptor {
+  public init()
+  public var description_: Swift.String {
+    get
+  }
+  public var id: Swift.String {
+    get
+  }
+  public var uuid: Swift.String {
+    get
+  }
+  @objc deinit
+}
+public class Service {
+  public init()
+  public var description_: Swift.String {
+    get
+  }
+  public var id: Swift.String {
+    get
+  }
+  public var includedSvcIds: Swift.String {
+    get
+  }
+  public var parentSvcIds: Swift.String {
+    get
+  }
+  public var uuid: Swift.String {
+    get
+  }
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers public class IPWorksBLEReadonlyList<Element> {
+  public init()
+  @objc deinit
+}
+@_hasMissingDesignatedInitializers final public class IPWorksBLEList<Element> : IPWorksBLE.IPWorksBLEReadonlyList<Element> {
+  public init<S>(_ sequence: S) where Element == S.Element, S : Swift.Sequence
+  final public func append(_ newElement: Element)
+  final public func remove(at index: Swift.Int32)
+  @objc deinit
+}
+extension IPWorksBLE.IPWorksBLEReadonlyList : Swift.Collection {
+  public typealias Index = Swift.Int
+  public var startIndex: Swift.Int {
+    get
+  }
+  public var endIndex: Swift.Int {
+    get
+  }
+  public func index(after i: Swift.Int) -> Swift.Int
+  public subscript(position: Swift.Int) -> Element {
+    get
+  }
+  public typealias Indices = Swift.DefaultIndices<IPWorksBLE.IPWorksBLEReadonlyList<Element>>
+  public typealias SubSequence = Swift.Slice<IPWorksBLE.IPWorksBLEReadonlyList<Element>>
+}
+extension IPWorksBLE.IPWorksBLEReadonlyList : Swift.Sequence {
+  public typealias Iterator = Swift.AnyIterator<Element>
+  public func makeIterator() -> IPWorksBLE.IPWorksBLEReadonlyList<Element>.Iterator
+}
+extension IPWorksBLE.IPWorksBLEList : Swift.ExpressibleByArrayLiteral {
+  convenience public init(arrayLiteral elements: Element...)
+  public typealias ArrayLiteralElement = Element
+}
+public enum IPWorksBLEError : Swift.Error {
+  case Error(Swift.Int32, Swift.String, Swift.String)
+}
+extension IPWorksBLE.IPWorksBLEError : Foundation.CustomNSError {
+  public var errorCode: Swift.Int {
+    get
+  }
+  public var errorUserInfo: [Swift.String : Any] {
+    get
+  }
+  public var errorSource: [Swift.String : Any] {
+    get
+  }
+}
+extension IPWorksBLE.ValueFormats : Swift.Equatable {}
+extension IPWorksBLE.ValueFormats : Swift.Hashable {}
+extension IPWorksBLE.ValueFormats : Swift.RawRepresentable {}

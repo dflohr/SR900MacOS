@@ -6,11 +6,6 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		5AA02F922EBB73A100ED1284 /* IPWorksBLE.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5AA02F912EBB73A100ED1284 /* IPWorksBLE.xcframework */; };
-		5AA02F932EBB73A100ED1284 /* IPWorksBLE.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 5AA02F912EBB73A100ED1284 /* IPWorksBLE.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-/* End PBXBuildFile section */
-
 /* Begin PBXCopyFilesBuildPhase section */
 		5AA02F942EBB73A100ED1284 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -18,7 +13,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				5AA02F932EBB73A100ED1284 /* IPWorksBLE.xcframework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -26,7 +20,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		5AA02F912EBB73A100ED1284 /* IPWorksBLE.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:74N8742JFG:n software, Inc."; lastKnownFileType = wrapper.xcframework; name = IPWorksBLE.xcframework; path = "../../../../Applications/IPWorks BLE 2024 macOS Edition/framework/IPWorksBLE.xcframework"; sourceTree = "<group>"; };
 		D6D2AC222EB3850F00434203 /* SR900MacOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SR900MacOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -56,26 +49,16 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5AA02F922EBB73A100ED1284 /* IPWorksBLE.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		5AA02F902EBB73A100ED1284 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				5AA02F912EBB73A100ED1284 /* IPWorksBLE.xcframework */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
 		D6D2AC192EB3850F00434203 = {
 			isa = PBXGroup;
 			children = (
 				D6D2AC242EB3850F00434203 /* SR900MacOS */,
-				5AA02F902EBB73A100ED1284 /* Frameworks */,
 				D6D2AC232EB3850F00434203 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -299,7 +282,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = ZV8A655DV9;
+				DEVELOPMENT_TEAM = KF868WRC5M;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
@@ -314,6 +297,10 @@
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/SR900MacOS/Frameworks",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SR900MacOS/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "";
@@ -343,7 +330,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = ZV8A655DV9;
+				DEVELOPMENT_TEAM = KF868WRC5M;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
@@ -358,6 +345,10 @@
 				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/SR900MacOS/Frameworks",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SR900MacOS/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "";

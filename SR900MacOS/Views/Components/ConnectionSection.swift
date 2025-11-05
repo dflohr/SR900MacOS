@@ -142,7 +142,7 @@ struct BLEConnectButton: View {
 //        }
 //    }
     
-    private func handleButtonAction() {
+    public func handleButtonAction() {
         if bleManager.isConnected {
             // Disconnect
             bleManager.disconnectDevice()
