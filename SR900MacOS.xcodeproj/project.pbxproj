@@ -33,11 +33,25 @@
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		D6E9230F2EBBBD440054CC27 /* Exceptions for "SR900MacOS" folder in "Embed Frameworks" phase from "SR900MacOS" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			attributesByRelativePath = {
+				Frameworks/IPWorksBLE.framework = (CodeSignOnCopy, RemoveHeadersOnCopy, );
+			};
+			buildPhase = 5AA02F942EBB73A100ED1284 /* Embed Frameworks */;
+			membershipExceptions = (
+				Frameworks/IPWorksBLE.framework,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		D6D2AC242EB3850F00434203 /* SR900MacOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				D6D2ACC52EB3DBBB00434203 /* Exceptions for "SR900MacOS" folder in "SR900MacOS" target */,
+				D6E9230F2EBBBD440054CC27 /* Exceptions for "SR900MacOS" folder in "Embed Frameworks" phase from "SR900MacOS" target */,
 			);
 			path = SR900MacOS;
 			sourceTree = "<group>";
