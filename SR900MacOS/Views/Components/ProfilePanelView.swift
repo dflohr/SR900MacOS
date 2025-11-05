@@ -1,4 +1,12 @@
 //
+//  ProfilePanelView.swift
+//  SR900MacOS
+//
+//  Created by Nisarg Mangukiya on 05/11/25.
+//
+
+
+//
 //  ContentView.swift
 //  Profiles
 //
@@ -8,11 +16,22 @@
 import SwiftUI
 
 struct ProfilePanelView: View {
+    @Binding var rectangle2Extended: Bool
+    @Binding var rectangle3Extended: Bool
+    @Binding var rectangle4Extended: Bool
+    let onGraphButtonPressed: (() -> Void)?
+    let onProfilesButtonPressed: (() -> Void)?
+    let onSettingsButtonPressed: (() -> Void)?
+    
+    
     @State private var autoStopRoast = false
     @State private var selectedRoast: Int? = nil
     @State private var altitudeBelow = true
     @State private var onRoaster = true
     @State private var profileName = "Factory_Default_Roast_Profile"
+    
+    var width: CGFloat
+
     
     let roastData = [
         (time: "Minute 1", motor: "9", heater: "2"),
@@ -41,31 +60,31 @@ struct ProfilePanelView: View {
     ]
     
     var body: some View {
-        ZStack {
+//        ZStack {
             // White canvas background
-            Color.white
+//            Color.white
             
-            VStack {
-                Spacer()
+//            VStack {
+//                Spacer()
                 
                 // Main rectangle with black frame
-                ZStack {
+//                ZStack {
                     // Black frame
-                    Color.black
-                        .frame(width: 440, height: 768)
+//                    Color.black
+//                        .frame(width: 440, height: 768)
                     
                     // Interior with custom color and frame insets
-                    ZStack {
-                        Color(red: 0.93, green: 0.93, blue: 0.93)
+//                    ZStack {
+//                        Color(red: 0.93, green: 0.93, blue: 0.93)
                         
                         VStack(spacing: 0) {
                             // Title
-                            Text("ROAST PROFILES")
-                                .font(.system(size: 32, weight: .bold))
-                                .padding(.top, 15)
-                                .padding(.bottom, 20)
+//                            Text("ROAST PROFILES")
+//                                .font(.system(size: 32, weight: .bold))
+//                                .padding(.top, 15)
+//                                .padding(.bottom, 20)
                             
-                            HStack(alignment: .top, spacing: 20) {
+                            HStack(alignment: .top, spacing: 10) {
                                 // Left Section - Levels and Timing
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text("Levels and Timing")
@@ -206,7 +225,7 @@ struct ProfilePanelView: View {
                                     Button("Import Summary") {}
                                         .buttonStyle(ProfileButtonStyle(height: 45))
                                 }
-                                .offset(y: -7)
+//                                .offset(y: -7)
                                 // Medium Buttons
                                 HStack(spacing: 10) {
                                     Button("Load") {}
@@ -220,7 +239,7 @@ struct ProfilePanelView: View {
                                 }
                                // .offset(y: 3)
                                 // Profile Name and On Roaster
-                                HStack(spacing: 30) {
+                                HStack(spacing: 10) {
                                     TextField("", text: $profileName)
                                         .textFieldStyle(.plain)
                                         .font(.system(size: 11))
@@ -243,20 +262,22 @@ struct ProfilePanelView: View {
                                     .border(Color.black, width: 2)
                                 }
                             }
-                            .padding(.horizontal, 10)
+                            .padding(.horizontal, 30)
                             .padding(.bottom, 25)
                         }
+//                        .padding(.horizontal, 100)
+                        .padding(.top, 180)
                     }
-                    .frame(width: 400, height: 688)
-                    .offset(y: 20)
-                }
-                .frame(width: 440, height: 768)
-                
-                Spacer()
-            }
-        }
-        .frame(width: 560, height: 900)
-    }
+//                    .frame(width: 400, height: 688)
+//                    .offset(y: 20)
+//                }
+//                .frame(width: 440, height: 768)
+//                
+//                Spacer()
+//            }
+//        }
+//        .frame(width: 560, height: 900)
+//    }
 }
 
 struct CheckboxToggleStyle: ToggleStyle {
@@ -291,8 +312,4 @@ struct ProfileButtonStyle: ButtonStyle {
             .border(Color.black, width: 2)
             .opacity(configuration.isPressed ? 0.7 : 1.0)
     }
-}
-
-#Preview {
-    ProfilePanelView()
 }

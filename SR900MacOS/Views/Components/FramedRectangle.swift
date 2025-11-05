@@ -56,6 +56,20 @@ struct FramedRectangle: View {
                     width: width
                 )
             }
+            
+            
+            if number == "3" {
+                ProfilePanelView(
+                    rectangle2Extended: $rectangle2Extended,
+                    rectangle3Extended: $rectangle3Extended,
+                    rectangle4Extended: $rectangle4Extended,
+                    onGraphButtonPressed: onGraphButtonPressed,
+                    onProfilesButtonPressed: onProfilesButtonPressed,
+                    onSettingsButtonPressed: onSettingsButtonPressed,
+                    width: width
+                )
+            }
+            
         }
         .frame(width: width, height: height)
     }
@@ -138,7 +152,7 @@ struct FramedRectangleContent: View {
 //                    .foregroundColor(.black)
             }
             if number == "3" {
-                Text("PROFILE")
+                Text("ROAST PROFILE")
                     .font(.custom("OpenSans-Bold", size: 24))
                     .foregroundColor(.black)
                     .background(Color(red: 0.93, green: 0.93, blue: 0.93).opacity(0.9))

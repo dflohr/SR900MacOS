@@ -10,10 +10,11 @@ import SwiftUI
 
 struct ConnectionSection: View {
     @ObservedObject var controlState: MainControlState
-    
+    @EnvironmentObject var bleManager: BLEManager
+
     var body: some View {
         HStack(spacing: 6) {
-            BLEConnectButton(controlState: controlState)
+            BLEConnectButton(controlState: controlState,bleManager: bleManager)
             Spacer()
             USBConnectButton(controlState: controlState)
             Spacer()
@@ -28,13 +29,66 @@ struct ConnectionSection: View {
 
 
 // MARK: - BLE Connect Button
+//struct BLEConnectButton: View {
+//    @ObservedObject var controlState: MainControlState
+//    @ObservedObject var bleManager: BLEManager
+//
+//    var body: some View {
+//        Button(action: {
+//            // Toggle BLE connection using BLEManager
+//            bleManager.toggleConnection()
+//        }) {
+//            HStack {
+//                Image("BLE_BTN")
+//                    .resizable()
+//                    .scaledToFit()
+//                    .frame(width: 26, height: 26)
+//                    .padding(.leading, 10)
+//
+//                Text("BLE Connect")
+//                    .font(.openSansBold(size: 14))
+//                    .foregroundColor(.black)
+//                    .lineLimit(nil)
+//                    .multilineTextAlignment(.center)
+//                    .lineSpacing(6)
+//                    .offset(x: -4)
+//
+//                Spacer()
+//
+//                ConnectionIndicator(isConnected: bleManager.isConnected)
+//            }
+//            .padding(.leading, 0)
+//            .frame(width: 147.5, height: 51)
+//            .background(Color(red: 0.85, green: 0.75, blue: 0.6))
+//            .overlay(
+//                RoundedRectangle(cornerRadius: 0)
+//                    .stroke(Color.black, lineWidth: 2)
+//            )
+//        }
+//        .buttonStyle(PlainButtonStyle())// ✅ removes default rounded button style
+//        .onAppear {
+//            // Set initial status when view appears
+//            controlState.displayText = bleManager.connectionStatus
+//            controlState.isConnected = bleManager.isConnected
+//        }
+//        .onChange(of: bleManager.connectionStatus) { oldStatus, newStatus in
+//            // Update display text whenever BLE connection status changes
+//            controlState.displayText = newStatus
+//        }
+//        .onChange(of: bleManager.isConnected) { oldValue, isConnected in
+//            // Sync control state with BLE manager
+//            controlState.isConnected = isConnected
+//        }
+//    }
+//}
+
 struct BLEConnectButton: View {
     @ObservedObject var controlState: MainControlState
+    @ObservedObject var bleManager: BLEManager
     
     var body: some View {
         Button(action: {
-            controlState.isConnected.toggle()
-            controlState.displayText = controlState.isConnected ? "BLE Connected" : "BLE Disconnected"
+            handleButtonAction()
         }) {
             HStack {
                 Image("BLE_BTN")
@@ -53,7 +107,7 @@ struct BLEConnectButton: View {
 
                 Spacer()
 
-                ConnectionIndicator(isConnected: controlState.isConnected)
+                ConnectionIndicator(isConnected: bleManager.isConnected)
             }
             .padding(.leading, 0)
             .frame(width: 147.5, height: 51)
@@ -63,9 +117,49 @@ struct BLEConnectButton: View {
                     .stroke(Color.black, lineWidth: 2)
             )
         }
-        .buttonStyle(PlainButtonStyle())// ✅ removes default rounded button style
+        .buttonStyle(PlainButtonStyle())
+        .onAppear {
+            controlState.displayText = bleManager.connectionStatus
+            controlState.isConnected = bleManager.isConnected
+        }
+        .onChange(of: bleManager.connectionStatus) { oldStatus, newStatus in
+            controlState.displayText = newStatus
+        }
+        .onChange(of: bleManager.isConnected) { oldValue, isConnected in
+            controlState.isConnected = isConnected
+        }
+    }
+    
+//    private var buttonText: String {
+//        if bleManager.isConnected {
+//            return "Disconnect"
+//        } else if bleManager.isScanning {
+//            return "Scanning..."
+//        } else if bleManager.sr900Device != nil {
+//            return "Connect"
+//        } else {
+//            return "Scan for SR900"
+//        }
+//    }
+    
+    private func handleButtonAction() {
+        if bleManager.isConnected {
+            // Disconnect
+            bleManager.disconnectDevice()
+        } else if bleManager.isScanning {
+            // Stop scanning
+            bleManager.stopScan()
+        } else if bleManager.sr900Device != nil {
+            // Connect to found device
+            bleManager.toggleConnection()
+        } else {
+            // No device found - start scanning
+            bleManager.startAutoScan()
+        }
     }
 }
+
+
 
 
 // MARK: - USB Connect Button

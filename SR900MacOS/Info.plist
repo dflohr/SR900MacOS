@@ -8,5 +8,10 @@
 		<string>OpenSans-Regular.ttf</string>
 		<string>OpenSans-SemiBold.ttf</string>
 	</array>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+<string>SR900 needs Bluetooth to connect and communicate with your coffee roaster.</string>
+
+<key>NSBluetoothPeripheralUsageDescription</key>
+<string>SR900 needs Bluetooth to discover and connect to nearby roasters.</string>
 </dict>
 </plist>

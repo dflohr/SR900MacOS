@@ -1165,6 +1165,8 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var viewModel = ContentViewModel()
+    @StateObject private var bleManager = BLEManager()
+
     
     var body: some View {
         ZStack {
@@ -1180,7 +1182,7 @@ struct ContentView: View {
                     onSettingsButtonPressed: viewModel.handleSettingsButtonPress
                 )
                 .zIndex(2)
-                
+                .environmentObject(bleManager)
                 SlidingPanelsContainer(viewModel: viewModel)
                     .offset(x: -570)
             }

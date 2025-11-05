@@ -285,31 +285,34 @@ import IPWorksBLE
 class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManagerDelegate {
     @Published var isConnected = false
     @Published var isScanning = false
-    @Published var sr900Device: (name: String, peripheral: CBPeripheral)? = nil
+    @Published var sr900Device: (name: String, macAddress: String)? = nil
     @Published var connectionStatus: String = "Not Connected"
-    @Published var discoveredDevices: [(name: String, peripheral: CBPeripheral, rssi: Int)] = []
+    @Published var discoveredDevices: [(name: String, macAddress: String, rssi: Int)] = []
     
     private var bleClient: BLEClient
     private var centralManager: CBCentralManager!
     private var targetDeviceName = "SR900"
     
-    // Store the mapping of peripheral to complete name
+    // Map to correlate CoreBluetooth peripherals with IPWorks MAC addresses
+    private var peripheralToMac: [UUID: String] = [:]
     private var peripheralToName: [UUID: String] = [:]
-    private var peripheralToRSSI: [UUID: Int] = [:]
     
     override init() {
         bleClient = BLEClient()
         super.init()
         
+        // Set license key
+        bleClient.runtimeLicense = "3131434A4D5A313130353235333057454254523141310045414B594E5A4A4B4F594643444A56490030303030303030300000554E3631315A3950503830420000#IPWORKSBLE#EXPIRING_TRIAL#20251205"
+        
         bleClient.delegate = self
         bleClient.activeScanning = true
         try? _ = bleClient.config(configurationString: "LogLevel=2")
         
-        // Initialize CoreBluetooth - THIS is the Apple framework Daniel mentioned
+        // Initialize CoreBluetooth for getting complete local names
         centralManager = CBCentralManager(delegate: self, queue: nil)
     }
     
-    // MARK: - CoreBluetooth Delegate (Apple Framework for Complete Local Name)
+    // MARK: - CoreBluetooth Delegate (For Complete Local Name Discovery)
     
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         switch central.state {
@@ -334,8 +337,12 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                        advertisementData: [String: Any],
                        rssi RSSI: NSNumber) {
         
-        // THIS IS THE KEY: Get the COMPLETE local name from advertisement data
-        // IPWorks cannot access this - only CoreBluetooth can
+        // ✅ If not scanning, ignore
+        guard isScanning else {
+            return
+        }
+        
+        // Get the COMPLETE local name from advertisement data
         guard let completeLocalName = advertisementData[CBAdvertisementDataLocalNameKey] as? String else {
             return
         }
@@ -345,45 +352,89 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
             return
         }
         
+        // ✅ Check if already discovered
+        if peripheralToName[peripheral.identifier] != nil {
+            return  // Already processed this peripheral
+        }
+        
         let rssiValue = RSSI.intValue
         
-        print("📡 Found SR900 via CoreBluetooth:")
+        print("📡 CoreBluetooth found SR900:")
         print("   Complete Name: \(completeLocalName)")  // e.g., "SR900A1B2C3"
         print("   Peripheral UUID: \(peripheral.identifier.uuidString)")
         print("   RSSI: \(rssiValue) dBm")
         
         // Store the complete name mapping
         peripheralToName[peripheral.identifier] = completeLocalName
-        peripheralToRSSI[peripheral.identifier] = rssiValue
+    }
+    
+    // MARK: - IPWorks BLE Delegate (For MAC Address Discovery)
+    
+    func onAdvertisement(
+        serverId: String,  // This is the MAC address!
+        name: String,
+        rssi: Int32,
+        txPower: Int32,
+        serviceUuids: String,
+        servicesWithData: String,
+        solicitedServiceUuids: String,
+        manufacturerCompanyId: Int32,
+        manufacturerData: Data,
+        isConnectable: Bool,
+        isScanResponse: Bool
+    ) {
+        // IPWorks provides MAC address but may not have complete name
+        guard name.hasPrefix(targetDeviceName) else { return }
+        
+        // ✅ If already found and not scanning, ignore duplicates
+        guard isScanning else {
+            print("⚠️ Ignoring advertisement - not scanning")
+            return
+        }
+        
+        print("📡 IPWorks found SR900:")
+        print("   Name from IPWorks: \(name)")  // Might be truncated
+        print("   MAC Address: \(serverId)")
+        print("   RSSI: \(rssi)")
+        
+        // Try to find the complete name from CoreBluetooth
+        var completeName = name  // Default to IPWorks name
+        
+        // Check if we have a better complete name from CoreBluetooth
+        for (uuid, storedName) in peripheralToName {
+            if storedName.hasPrefix(name) || name.hasPrefix(storedName.prefix(name.count)) {
+                // Found a match - use the complete name from CoreBluetooth
+                completeName = storedName
+                peripheralToMac[uuid] = serverId
+                print("   ✓ Matched with CoreBluetooth complete name: \(completeName)")
+                break
+            }
+        }
         
         DispatchQueue.main.async {
-            // Update discovered devices list
-            let existingIndex = self.discoveredDevices.firstIndex { $0.peripheral.identifier == peripheral.identifier }
-            
-            if let index = existingIndex {
-                // Update existing entry
-                self.discoveredDevices[index] = (
-                    name: completeLocalName,
-                    peripheral: peripheral,
-                    rssi: rssiValue
-                )
-            } else {
-                // Add new entry
-                self.discoveredDevices.append((
-                    name: completeLocalName,
-                    peripheral: peripheral,
-                    rssi: rssiValue
-                ))
+            // ✅ Check if device already exists
+            if self.discoveredDevices.contains(where: { $0.macAddress == serverId }) {
+                print("   ⚠️ Device already in list - skipping")
+                return
             }
+            
+            // Add to discovered devices list
+            self.discoveredDevices.append((
+                name: completeName,
+                macAddress: serverId,
+                rssi: Int(rssi)
+            ))
+            print("   ✅ Added to discovered devices list (Total: \(self.discoveredDevices.count))")
             
             // Auto-select first SR900 if none selected
             if self.sr900Device == nil {
-                self.sr900Device = (name: completeLocalName, peripheral: peripheral)
-                self.connectionStatus = "Found: \(completeLocalName)"
-                print("✓ Auto-selected: \(completeLocalName)")
+                self.sr900Device = (name: completeName, macAddress: serverId)
+                self.connectionStatus = "Found: \(completeName)"
+                print("✓ Auto-selected: \(completeName) (\(serverId))")
                 
-                // Optionally stop scanning after finding first device
-                // self.stopScan()
+                // ✅ Stop scanning immediately after finding first device
+                print("🛑 Stopping scan - first device found")
+                self.stopScan()
             }
         }
     }
@@ -395,14 +446,18 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
             disconnectDevice()
         } else {
             if let device = sr900Device {
-                connectDevice(peripheral: device.peripheral, name: device.name)
+                connectDevice(macAddress: device.macAddress, name: device.name)
             } else {
                 connectionStatus = "No SR900 device found"
                 print("No SR900 device available to connect")
+                // Restart scan
+                startAutoScan()
             }
         }
     }
     
+    // MARK: - Public Functions
+
     func startAutoScan() {
         guard !isScanning else { return }
         guard centralManager.state == .poweredOn else {
@@ -413,51 +468,75 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         isScanning = true
         connectionStatus = "Scanning for SR900..."
         
-        // Clear previous discoveries
+        // ✅ Clear ALL previous data INCLUDING selected device
         discoveredDevices.removeAll()
         peripheralToName.removeAll()
-        peripheralToRSSI.removeAll()
+        peripheralToMac.removeAll()
+        sr900Device = nil  // ✅ Critical: Clear selected device to allow auto-stop
         
-        print("🔍 Starting CoreBluetooth scan...")
+        print("🔍 Starting dual scan (CoreBluetooth + IPWorks)...")
         
-        // Scan for all peripherals
-        // We filter by name in the didDiscover callback
+        // Start CoreBluetooth scan (for complete names)
         centralManager.scanForPeripherals(
             withServices: nil,
-            options: [CBCentralManagerScanOptionAllowDuplicatesKey: false]
+            options: [CBCentralManagerScanOptionAllowDuplicatesKey: false]  // ✅ No duplicates
         )
+        
+        // Start IPWorks scan (for MAC addresses)
+        do {
+            try bleClient.startScanning(serviceUuids: "")
+            print("✓ Both scans started")
+        } catch {
+            print("Error starting IPWorks scan: \(error.localizedDescription)")
+            connectionStatus = "Scan Error"
+            isScanning = false
+        }
     }
-    
+
     func stopScan() {
         guard isScanning else { return }
         
+        print("🛑 Stopping scans...")
+        
+        // Stop both scans
         centralManager.stopScan()
+        
+        do {
+            try bleClient.stopScanning()
+        } catch {
+            print("Error stopping IPWorks scan: \(error.localizedDescription)")
+        }
+        
         isScanning = false
         
-        connectionStatus = sr900Device != nil ? "SR900 Found" : "No SR900 Found"
-        print("Scan stopped")
+        if sr900Device != nil {
+            connectionStatus = "SR900 Found"
+        } else {
+            connectionStatus = "No SR900 Found"
+        }
+        
+        print("✅ Scan stopped - Found \(discoveredDevices.count) SR900 device(s)")
     }
     
-    func selectDevice(name: String, peripheral: CBPeripheral) {
-        sr900Device = (name: name, peripheral: peripheral)
+    func selectDevice(name: String, macAddress: String) {
+        sr900Device = (name: name, macAddress: macAddress)
         connectionStatus = "Selected: \(name)"
-        print("Selected device: \(name)")
+        print("User selected: \(name) (\(macAddress))")
     }
     
     // MARK: - Private Functions
     
-    private func connectDevice(peripheral: CBPeripheral, name: String) {
+    private func connectDevice(macAddress: String, name: String) {
         connectionStatus = "Connecting..."
         print("Connecting to \(name)...")
-        print("   Peripheral UUID: \(peripheral.identifier.uuidString)")
+        print("   MAC Address: \(macAddress)")
         
         DispatchQueue.global(qos: .userInitiated).async {
             do {
                 self.bleClient.timeout = 15
                 
-                // Connect using the peripheral's UUID
-                // IPWorks uses this UUID to identify the device
-                try self.bleClient.connect(serverId: peripheral.identifier.uuidString)
+                // Connect using MAC address from IPWorks
+                try self.bleClient.connect(serverId: macAddress)
                 
                 DispatchQueue.main.async {
                     self.isConnected = true
@@ -485,22 +564,19 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         }
     }
     
-    /*private*/ func disconnectDevice() {
-        guard let device = sr900Device else { return }
-        
+    func disconnectDevice() {
         connectionStatus = "Disconnecting..."
-        print("Disconnecting from \(device.name)...")
+        print("Disconnecting from SR900...")
         
         DispatchQueue.global(qos: .userInitiated).async {
             do {
                 try self.bleClient.disconnect()
-                
                 DispatchQueue.main.async {
                     self.isConnected = false
                     self.connectionStatus = "Disconnected"
-                    print("✓ Disconnected")
+                    print("✓ Disconnected from SR900")
                     
-                    // Restart scanning
+                    // Restart scanning for SR900 after disconnect
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                         self.startAutoScan()
                     }
@@ -514,24 +590,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         }
     }
     
-    // MARK: - BLEClientDelegate Methods (IPWorks)
-    
-    func onAdvertisement(
-        serverId: String,
-        name: String,
-        rssi: Int32,
-        txPower: Int32,
-        serviceUuids: String,
-        servicesWithData: String,
-        solicitedServiceUuids: String,
-        manufacturerCompanyId: Int32,
-        manufacturerData: Data,
-        isConnectable: Bool,
-        isScanResponse: Bool
-    ) {
-        // Not used - we rely on CoreBluetooth for discovery
-        // This is because IPWorks cannot see the complete local name
-    }
+    // MARK: - Other BLEClientDelegate Methods
     
     func onConnected(statusCode: Int32, description: String) {
         print("IPWorks: Connected - \(description)")
@@ -586,7 +645,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     
     func onStopScan(errorCode: Int32, errorDescription: String) {
         if errorCode != 0 {
-            print("IPWorks: Scan error - \(errorDescription)")
+            print("IPWorks: Scan stopped with error - \(errorDescription)")
         }
     }
     
