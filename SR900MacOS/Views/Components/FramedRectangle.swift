@@ -130,27 +130,41 @@ struct FramedRectangleContent: View {
     
     var body: some View {
         Group {
-            if let imageName = imageName {
-                Image(imageName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: width - 40, height: height - 60)
-                    .offset(y: -10)
-            }
+//            if let imageName = imageName {
+//                Image(imageName)
+//                    .resizable()
+//                    .scaledToFit()
+//                    .frame(width: width - 40, height: height - 60)
+//                    .offset(y: -10)
+//            }
             
             if number == "2" {
-                Text("ROAST GRAPH")
+                Text("ROAST PROFILE GRAPH")
                     .font(.custom("OpenSans-Bold", size: 24))
                     .foregroundColor(.black)
                     .background(Color(red: 0.93, green: 0.93, blue: 0.93).opacity(0.9))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .offset(y: -244)
+                    .offset(y: -244)  // ✅ Move title up more
+                
+                // ✅ Add the graph view
+                RoastGraphView(width: width, imageName: imageName)
+                    .offset(y: 20)
+            }
+            
+//            if number == "2" {
+//                Text("ROAST GRAPH")
+//                    .font(.custom("OpenSans-Bold", size: 24))
+//                    .foregroundColor(.black)
+//                    .background(Color(red: 0.93, green: 0.93, blue: 0.93).opacity(0.9))
+//                    .padding(.horizontal, 10)
+//                    .padding(.vertical, 5)
+//                    .offset(y: -244)
 //            } else {
 //                Text(number)
 //                    .font(.custom("OpenSans-Bold", size: 48))
 //                    .foregroundColor(.black)
-            }
+//            }
             if number == "3" {
                 Text("ROAST PROFILE")
                     .font(.custom("OpenSans-Bold", size: 24))
