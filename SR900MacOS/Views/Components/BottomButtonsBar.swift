@@ -19,6 +19,8 @@ struct BottomButtonsBar: View {
     @Binding var rectangle3Extended: Bool
     @Binding var rectangle4Extended: Bool
     
+    @EnvironmentObject var bleManager: BLEManager
+    
     var body: some View {
         HStack(spacing: 0) {
             ForEach(Array(buttonLabels.enumerated()), id: \.offset) { index, label in
@@ -53,6 +55,10 @@ struct BottomButtonsBar: View {
         case "GRAPH": return onGraphButtonPressed ?? { print("GRAPH button pressed") }
         case "PROFILES": return onProfilesButtonPressed ?? { print("PROFILES button pressed") }
         case "SETTINGS": return onSettingsButtonPressed ?? { print("SETTINGS button pressed") }
+        case "READ-ME": return {
+               print("READ-ME button pressed - sending Hello World via DF02")
+               bleManager.sendData("Hello World")
+           }
         default: return { print("\(label) button pressed") }
         }
     }

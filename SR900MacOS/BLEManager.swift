@@ -39,12 +39,15 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     // Track complete names extracted via CoreBluetooth (AD 0x09)
     private var completeNames: [String: String] = [:]
     
+    // Track the writable DF02 characteristic for sending commands
+    private var writableCharacteristic: (serviceId: String, characteristicId: String, uuid: String)? = nil
+    
     private var targetDeviceName = "SR900"  // Will match any device starting with "SR900"
     
     override init() {
         bleClient = BLEClient()
         super.init()
-        
+        bleClient.runtimeLicense = "3131434A4D444E5852463230323631313035423554433134333600444E5842574A4746464246470030303030303030300000395A385655534248335A53530000"
         // Initialize IPWorksBLE
         bleClient.delegate = self
         bleClient.activeScanning = true
@@ -64,13 +67,13 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                 self.isCoreBTInitialized = true
             }
             
-            print("Hybrid BLE Manager initialized (CoreBluetooth + IPWorksBLE)")
-            print("  - CoreBluetooth: For AD 0x09 (Complete Local Name) extraction")
-            print("  - IPWorksBLE: For device connections")
+          //  print("Hybrid BLE Manager initialized (CoreBluetooth + IPWorksBLE)")
+          //  print("  - CoreBluetooth: For AD 0x09 (Complete Local Name) extraction")
+           // print("  - IPWorksBLE: For device connections")
         } else {
-            print("IPWorksBLE-only BLE Manager initialized")
-            print("  - AD 0x09 discovery: DISABLED")
-            print("  - Using IPWorksBLE names only (faster but may be truncated)")
+          //  print("IPWorksBLE-only BLE Manager initialized")
+          //  print("  - AD 0x09 discovery: DISABLED")
+          //  print("  - Using IPWorksBLE names only (faster but may be truncated)")
         }
         
         // Start scanning for SR900 device automatically
@@ -90,7 +93,42 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                 connectDevice(macAddress: device.macAddress)
             } else {
                 connectionStatus = "No SR900 device found"
-                print("No SR900 device available to connect")
+              //  print("No SR900 device available to connect")
+            }
+        }
+    }
+    
+    /// Send data to the SR900 device via the writable DF02 characteristic
+    func sendData(_ text: String) {
+        guard let writable = writableCharacteristic else {
+          //  print("⚠ No writable characteristic found (DF02)")
+            connectionStatus = "No writable characteristic"
+            return
+        }
+        
+        guard let data = text.data(using: .utf8) else {
+           // print("✗ Failed to convert text to data")
+            return
+        }
+        
+        print("📤 Sending to \(writable.uuid): '\(text)' (\(data.count) bytes)")
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                try self.bleClient.writeValue(
+                    serviceId: writable.serviceId,
+                    characteristicId: writable.characteristicId,
+                    descriptorId: "",
+                    value: data
+                )
+                
+                DispatchQueue.main.async {
+                   // print("✓ Write initiated to \(writable.uuid)")
+                }
+            } catch let error {
+                DispatchQueue.main.async {
+                   // print("✗ Failed to write: \(error.localizedDescription)")
+                }
             }
         }
     }
@@ -104,9 +142,9 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         
         print("═══════════════════════════════════")
         if enableAD0x09Discovery {
-            print("Starting hybrid BLE scan...")
+          //  print("Starting hybrid BLE scan...")
         } else {
-            print("Starting IPWorksBLE-only scan...")
+          //  print("Starting IPWorksBLE-only scan...")
         }
         
         // Start CoreBluetooth scan for Complete Local Name (AD 0x09) extraction (if enabled)
@@ -119,42 +157,42 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                 options: [CBCentralManagerScanOptionAllowDuplicatesKey: NSNumber(value: true)]
             )
         } else if enableAD0x09Discovery {
-            print("⚠ CoreBluetooth not ready yet")
+           // print("⚠ CoreBluetooth not ready yet")
         } else {
-            print("ℹ️ CoreBluetooth AD 0x09 discovery disabled (using IPWorksBLE names only)")
+           // print("ℹ️ CoreBluetooth AD 0x09 discovery disabled (using IPWorksBLE names only)")
         }
         
         // Start IPWorksBLE scan for device discovery and connection
         do {
-            print("Starting BLE scan for SR900 devices...")
+         //   print("Starting BLE scan for SR900 devices...")
             try bleClient.startScanning(serviceUuids: "")
-            print("✓ IPWorksBLE scanning started (for device connections)")
+         //   print("✓ IPWorksBLE scanning started (for device connections)")
         } catch {
-            print("Error starting scan: \(error.localizedDescription)")
+          //  print("Error starting scan: \(error.localizedDescription)")
             connectionStatus = "Scan Error"
             isScanning = false
         }
         
-        print("═══════════════════════════════════")
+       // print("═══════════════════════════════════")
     }
     
     /// Stop scanning for devices
     func stopScan() {
         guard isScanning else { return }
         
-        print("═══════════════════════════════════")
-        print("Stopping BLE scan...")
+       // print("═══════════════════════════════════")
+       // print("Stopping BLE scan...")
         
         // Stop both scanners (CoreBluetooth only if enabled)
         if enableAD0x09Discovery && isCoreBTInitialized {
             centralManager.stopScan()
-            print("✓ CoreBluetooth scan stopped")
+          //  print("✓ CoreBluetooth scan stopped")
         }
         
         do {
             try bleClient.stopScanning()
             isScanning = false
-            print("✓ IPWorksBLE scan stopped")
+         //   print("✓ IPWorksBLE scan stopped")
             
             if sr900Device != nil {
                 if enableAD0x09Discovery, let device = sr900Device, let completeName = completeNames[device.macAddress] {
@@ -163,18 +201,18 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                 } else {
                     connectionStatus = "SR900 Found"
                     if enableAD0x09Discovery {
-                        print("ℹ️ Final status: SR900 Found (no AD 0x09)")
+                      //  print("ℹ️ Final status: SR900 Found (no AD 0x09)")
                     } else {
-                        print("ℹ️ Final status: SR900 Found (AD 0x09 disabled)")
+                       // print("ℹ️ Final status: SR900 Found (AD 0x09 disabled)")
                     }
                 }
             } else {
                 connectionStatus = "No SR900 Found"
             }
             
-            print("═══════════════════════════════════")
+           // print("═══════════════════════════════════")
         } catch {
-            print("Error stopping IPWorksBLE scan: \(error.localizedDescription)")
+            //print("Error stopping IPWorksBLE scan: \(error.localizedDescription)")
         }
     }
     
@@ -182,11 +220,11 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     
     private func connectDevice(macAddress: String) {
         connectionStatus = "Connecting..."
-        print("Connecting to SR900: \(macAddress)")
+       // print("Connecting to SR900: \(macAddress)")
         
         // Show the complete name we extracted via CoreBluetooth
         if let completeName = completeNames[macAddress] {
-            print("📱 Complete Local Name (AD 0x09): '\(completeName)'")
+           // print("📱 Complete Local Name (AD 0x09): '\(completeName)'")
         }
         
         DispatchQueue.global(qos: .userInitiated).async {
@@ -197,11 +235,11 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                 DispatchQueue.main.async {
                     self.isConnected = true
                     self.connectionStatus = "Connected"
-                    print("✓ Connected to SR900 successfully!")
+                  //  print("✓ Connected to SR900 successfully!")
                 }
                 
                 // Discover services
-                print("Discovering services...")
+              //  print("Discovering services...")
                 try self.bleClient.discover(
                     serviceUuids: "",
                     characteristicUuids: "",
@@ -209,47 +247,205 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                     includedByServiceId: ""
                 )
                 
-                print("Found \(self.bleClient.services.count) service(s)")
+              //  print("Found \(self.bleClient.services.count) service(s)")
+                
+                // STEP 1: Read Device Name from Generic Access Service (0x1800)
+                self.readDeviceNameFromGATT(macAddress: macAddress)
+                
+                // STEP 2: Find and subscribe to characteristics starting with "DF"
+                self.discoverAndSubscribeToDFCharacteristics()
                 
             } catch {
                 DispatchQueue.main.async {
                     self.connectionStatus = "Connection Failed"
-                    print("✗ Connection failed: \(error.localizedDescription)")
+                   // print("✗ Connection failed: \(error.localizedDescription)")
                 }
             }
         }
     }
     
+    /// Read the complete device name from Generic Access Service (0x1800)
+    private func readDeviceNameFromGATT(macAddress: String) {
+      //  print("═══════════════════════════════════")
+      //  print("Reading Device Name from GATT...")
+        
+        var actualDeviceName = ""
+        
+        for service in bleClient.services {
+           // print("  Service: \(service.uuid) - \(service.description_)")
+            
+            // Generic Access Service UUID (0x1800 or 00001800-0000-1000-8000-00805f9b34fb)
+            if service.uuid.lowercased().contains("1800") {
+               // print(">>> Found Generic Access Service (0x1800)!")
+                
+                // Set this service as active
+                bleClient.service = service.id
+                
+                // Look for Device Name characteristic (0x2A00)
+                for characteristic in bleClient.characteristics {
+                  //  print("    Char: \(characteristic.uuid)")
+                    
+                    if characteristic.uuid.lowercased().contains("2a00") {
+                       // print(">>> Found Device Name characteristic (0x2A00)! Reading...")
+                        
+                        do {
+                            // Read the device name value
+                            let nameData = try bleClient.readValue(
+                                serviceId: service.id,
+                                characteristicId: characteristic.id,
+                                descriptorId: ""
+                            )
+                            
+                            // Decode as UTF-8 string
+                            if let decodedName = String(data: nameData, encoding: .utf8) {
+                                actualDeviceName = decodedName
+                                //print("✓✓✓ Complete Device Name from GATT: '\(decodedName)'")
+                                
+                                // Update device with actual name
+                                DispatchQueue.main.async {
+                                    if let currentDevice = self.sr900Device, currentDevice.macAddress == macAddress {
+                                        let oldName = currentDevice.name
+                                        if oldName != actualDeviceName {
+                                            self.sr900Device = (name: actualDeviceName, macAddress: macAddress)
+                                           // print("✓ UPDATED: '\(oldName)' → '\(actualDeviceName)'")
+                                            self.connectionStatus = "Connected - \(actualDeviceName)"
+                                        }
+                                    }
+                                }
+                            } else {
+                              //  print("✗ Failed to decode name as UTF-8")
+                            }
+                        } catch {
+                           // print("✗ Error reading Device Name: \(error.localizedDescription)")
+                        }
+                        break
+                    }
+                }
+                break
+            }
+        }
+        
+        if actualDeviceName.isEmpty {
+          //  print("⚠ Could not find Device Name characteristic (0x2A00)")
+        }
+        
+       // print("═══════════════════════════════════")
+    }
+    
+    /// Discover and subscribe to all characteristics starting with "DF"
+    private func discoverAndSubscribeToDFCharacteristics() {
+      //  print("═══════════════════════════════════")
+      //  print("Searching for characteristics starting with 'DF'...")
+        
+        var subscribedCount = 0
+        
+        for service in bleClient.services {
+            // Set this service as active to access its characteristics
+            bleClient.service = service.id
+            
+            for characteristic in bleClient.characteristics {
+                // Check if this characteristic starts with "DF" (case-insensitive)
+                // Check both UUID and ID since they might be formatted differently
+                let uuid = characteristic.uuid.uppercased().replacingOccurrences(of: "-", with: "")
+                let charId = characteristic.id.uppercased().replacingOccurrences(of: "-", with: "")
+                
+                if uuid.hasPrefix("DF") || charId.hasPrefix("DF") {
+                    print(">>> Found DF characteristic!")
+                    print("    UUID: \(characteristic.uuid)")
+                    print("    ID: \(characteristic.id)")
+                    
+                    // Check if this is DF02 for writing
+                    if charId.contains("DF00DF020000") || charId.hasPrefix("DF00DF02") || uuid.hasPrefix("DF00DF02") {
+                       // print("    ✏️ This is DF02 - will use for writing")
+                        writableCharacteristic = (
+                            serviceId: service.id,
+                            characteristicId: characteristic.id,
+                            uuid: characteristic.uuid
+                        )
+                    }
+                    
+                    // Subscribe to this characteristic for notifications
+                    do {
+                        try bleClient.subscribe(
+                            serviceId: service.id,
+                            characteristicId: characteristic.id
+                        )
+                      //  print("✓ Successfully subscribed to \(characteristic.uuid)!")
+                        subscribedCount += 1
+                    } catch let subscribeError {
+                      //  print("✗ Failed to subscribe: \(subscribeError.localizedDescription)")
+                    }
+                }
+            }
+        }
+        
+        if subscribedCount == 0 {
+          //  print("⚠ No characteristics starting with 'DF' found")
+        } else {
+           // print("📊 Subscribed to \(subscribedCount) DF characteristic(s)")
+            DispatchQueue.main.async {
+                self.connectionStatus = "Connected & Subscribed"
+            }
+        }
+        
+        if writableCharacteristic != nil {
+           // print("✓ Writable DF02 characteristic ready for commands")
+            
+            // Wait 2 seconds after "Connected & Subscribed"
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                // Clear the status textbox
+                self.connectionStatus = ""
+                
+                // Send "Hello World"
+               // print("Sending test message...")
+                self.sendData("Hello Sam")
+                
+                // Immediately display "Message sent"
+                self.connectionStatus = "Message sent"
+                
+                // Clear textbox after 2 seconds
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    self.connectionStatus = ""
+                }
+            }
+        } else {
+          //  print("⚠ No writable DF02 characteristic found")
+        }
+        
+      ///  print("═══════════════════════════════════")
+    }
+    
     func disconnectDevice() {
         connectionStatus = "Disconnecting..."
-        print("═══════════════════════════════════")
-        print("Disconnecting from SR900...")
+      //  print("═══════════════════════════════════")
+       // print("Disconnecting from SR900...")
         
         DispatchQueue.global(qos: .userInitiated).async {
             do {
                 try self.bleClient.disconnect()
                 DispatchQueue.main.async {
                     self.isConnected = false
+                    self.writableCharacteristic = nil
                     self.connectionStatus = "Disconnected"
-                    print("✓ Disconnected from SR900")
-                    print("═══════════════════════════════════")
+                  //  print("✓ Disconnected from SR900")
+                   // print("═══════════════════════════════════")
                     
                     // Clear the sr900Device to force a fresh discovery
                     self.sr900Device = nil
-                    print("ℹ️ Cleared device cache for fresh discovery")
+                   // print("ℹ️ Cleared device cache for fresh discovery")
                     
                     // Restart scanning for SR900 after disconnect
                     // Give a longer delay to ensure CoreBluetooth is ready
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        print("🔄 Restarting scan after disconnect...")
+                       // print("🔄 Restarting scan after disconnect...")
                         self.startAutoScan()
                     }
                 }
             } catch {
                 DispatchQueue.main.async {
                     self.connectionStatus = "Disconnect Error"
-                    print("✗ Disconnect error: \(error.localizedDescription)")
-                    print("═══════════════════════════════════")
+                   // print("✗ Disconnect error: \(error.localizedDescription)")
+                  //  print("═══════════════════════════════════")
                 }
             }
         }
@@ -315,7 +511,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                         print("   RSSI: \(RSSI) dBm")
                     } else {
                         // Still log duplicate discoveries but less verbose
-                        print("📱 [CoreBluetooth] Re-discovered: '\(completeName)' (RSSI: \(RSSI))")
+                       // print("📱 [CoreBluetooth] Re-discovered: '\(completeName)' (RSSI: \(RSSI))")
                     }
                     
                     // Update the sr900Device if this is the one we're tracking
@@ -323,13 +519,13 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                        currentDevice.macAddress == macAddress {
                         // Update if name changed or if we didn't have AD 0x09 before
                         if currentDevice.name != completeName {
-                            print("   🔄 Updating device name from '\(currentDevice.name)' to '\(completeName)'")
+                          //  print("   🔄 Updating device name from '\(currentDevice.name)' to '\(completeName)'")
                             self.sr900Device = (name: completeName, macAddress: macAddress)
                         }
                         // Always update status to show AD 0x09
                         self.connectionStatus = "SR900 Found - AD 0x09: \(completeName)"
                         if isNewOrUpdated {
-                            print("   ✓ Status updated with AD 0x09 name")
+                          //  print("   ✓ Status updated with AD 0x09 name")
                         }
                     }
                 }
@@ -365,9 +561,9 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
             // Debug: Check if we have the AD 0x09 name (only if feature is enabled)
             if self.enableAD0x09Discovery {
                 if self.completeNames[serverId] != nil {
-                    print("   ✓ AD 0x09 name available in cache: '\(self.completeNames[serverId]!)'")
+                   // print("   ✓ AD 0x09 name available in cache: '\(self.completeNames[serverId]!)'")
                 } else {
-                    print("   ⚠️ AD 0x09 name NOT in cache yet (will wait for CoreBluetooth)")
+                   // print("   ⚠️ AD 0x09 name NOT in cache yet (will wait for CoreBluetooth)")
                 }
             }
             
@@ -386,8 +582,8 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                 if !self.enableAD0x09Discovery {
                     // AD 0x09 disabled - use IPWorksBLE name immediately
                     self.connectionStatus = "SR900 Found"
-                    print("✓ [IPWorksBLE-\(packetType)] Found SR900 device: '\(displayName)' (\(serverId)) [RSSI: \(rssi)]")
-                    print("   ℹ️ Using IPWorksBLE name (AD 0x09 discovery disabled)")
+                  //  print("✓ [IPWorksBLE-\(packetType)] Found SR900 device: '\(displayName)' (\(serverId)) [RSSI: \(rssi)]")
+                  //  print("   ℹ️ Using IPWorksBLE name (AD 0x09 discovery disabled)")
                     
                     // Stop scanning immediately
                     self.stopScan()
@@ -395,8 +591,8 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                     // AD 0x09 enabled and name already available
                     self.connectionStatus = "SR900 Found - AD 0x09: \(completeName)"
                     
-                    print("✓ [IPWorksBLE-\(packetType)] Found SR900 device: '\(displayName)' (\(serverId)) [RSSI: \(rssi)]")
-                    print("   ✓ AD 0x09 name: '\(completeName)' (using this)")
+                    //print("✓ [IPWorksBLE-\(packetType)] Found SR900 device: '\(displayName)' (\(serverId)) [RSSI: \(rssi)]")
+                    //print("   ✓ AD 0x09 name: '\(completeName)' (using this)")
                     
                     // Stop scanning immediately since we have the complete name
                     self.stopScan()
@@ -414,11 +610,11 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                         // Update status with whatever name we have now
                         if let completeName = self.completeNames[serverId] {
                             self.connectionStatus = "SR900 Found - AD 0x09: \(completeName)"
-                            print("   ✓ CoreBluetooth extracted: '\(completeName)'")
+                          //  print("   ✓ CoreBluetooth extracted: '\(completeName)'")
                         } else {
                             self.connectionStatus = "SR900 Found"
-                            print("   ⚠️ CoreBluetooth did not extract AD 0x09 name within 4 seconds")
-                            print("   ℹ️ Using IPWorksBLE name: '\(displayName)'")
+                          //  print("   ⚠️ CoreBluetooth did not extract AD 0x09 name within 4 seconds")
+                           // print("   ℹ️ Using IPWorksBLE name: '\(displayName)'")
                         }
                         
                         // Now stop scanning
@@ -430,11 +626,11 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     }
     
     func onConnected(statusCode: Int32, description: String) {
-        print("Connected: \(description)")
+       // print("Connected: \(description)")
     }
     
     func onDisconnected(statusCode: Int32, description: String) {
-        print("Disconnected: \(description)")
+      //  print("Disconnected: \(description)")
         DispatchQueue.main.async {
             self.isConnected = false
             self.connectionStatus = "Disconnected"
@@ -456,7 +652,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     }
     
     func onError(errorCode: Int32, description: String) {
-        print("Error: \(description) (code: \(errorCode))")
+       // print("Error: \(description) (code: \(errorCode))")
         DispatchQueue.main.async {
             self.connectionStatus = "Error: \(description)"
         }
@@ -465,50 +661,64 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     func onLog(logLevel: Int32, message: String, logType: String) {
         // Optional: log messages for debugging
         if logLevel >= 2 {
-            print("Log [\(logType)]: \(message)")
+          //  print("Log [\(logType)]: \(message)")
         }
     }
     
     func onPairingRequest(serverId: String, pairingKind: Int32, pin: inout String, accept: inout Bool) {
-        print("Pairing request from: \(serverId)")
+        //print("Pairing request from: \(serverId)")
         accept = true // Auto-accept pairing for SR900
     }
     
     func onServerUpdate(name: String, changedServices: String) {
-        print("Server updated: \(name)")
+        //print("Server updated: \(name)")
     }
     
     func onStartScan(serviceUuids: String) {
-        print("Scan started successfully")
+       // print("Scan started successfully")
     }
     
     func onStopScan(errorCode: Int32, errorDescription: String) {
         if errorCode != 0 {
-            print("Scan stopped with error: \(errorDescription)")
+           // print("Scan stopped with error: \(errorDescription)")
         } else {
-            print("Scan stopped")
+          //  print("Scan stopped")
         }
     }
     
     func onSubscribed(serviceId: String, characteristicId: String, uuid: String, description: String) {
-        print("Subscribed to: \(description.isEmpty ? uuid : description)")
+       // print("Subscribed to: \(description.isEmpty ? uuid : description)")
     }
     
     func onUnsubscribed(serviceId: String, characteristicId: String, uuid: String, description: String) {
-        print("Unsubscribed from: \(description.isEmpty ? uuid : description)")
+       // print("Unsubscribed from: \(description.isEmpty ? uuid : description)")
     }
     
     func onValue(serviceId: String, characteristicId: String, descriptorId: String, uuid: String, description: String, value: Data) {
-        print("Value received: \(description.isEmpty ? uuid : description) - \(value.count) bytes")
-        // TODO: Handle incoming data from SR900 (temperature, status, etc.)
+        let characteristicName = description.isEmpty ? uuid : description
+        
+        // Convert data to hex string for display
+        let hexString = value.map { String(format: "%02X", $0) }.joined(separator: " ")
+        
+        // Build display message
+        var displayMessage = "📥 Value from \(characteristicName):\n"
+        displayMessage += "   Bytes: \(value.count)\n"
+        displayMessage += "   Hex: \(hexString)"
+        
+        // Try to decode as UTF-8 string
+        if let stringValue = String(data: value, encoding: .utf8), !stringValue.isEmpty {
+            displayMessage += "\n   UTF-8: \(stringValue)"
+            
+        }
+        self.connectionStatus = "Received: \(String(data: value, encoding: .utf8) ?? hexString)"
+       // print(displayMessage)
+        
+        // TODO: Parse SR900-specific data formats here
+        // (temperature readings, roast profiles, status updates, etc.)
     }
     
+
     func onWriteResponse(serviceId: String, characteristicId: String, descriptorId: String, uuid: String, description: String) {
-        print("Write response: \(description.isEmpty ? uuid : description)")
+        //print("Write response: \(description.isEmpty ? uuid : description)")
     }
 }
-
-
-
-
-
