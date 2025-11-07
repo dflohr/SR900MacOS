@@ -389,13 +389,15 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         }
         
         if writableCharacteristic != nil {
-           // print("✓ Writable DF02 characteristic ready for commands")
+            // print("✓ Writable DF02 characteristic ready for commands")
             
             // Wait 2 seconds after "Connected & Subscribed"
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                 // Clear the status textbox
                 self.connectionStatus = ""
-                
+            }
+        }
+        /*
                 // Send "Hello World"
                // print("Sending test message...")
                 self.sendData("Hello Sam")
@@ -411,7 +413,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         } else {
           //  print("⚠ No writable DF02 characteristic found")
         }
-        
+        */
       ///  print("═══════════════════════════════════")
     }
     
@@ -717,6 +719,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         // (temperature readings, roast profiles, status updates, etc.)
     }
     */
+    /*
     func onValue(serviceId: String, characteristicId: String, descriptorId: String, uuid: String, description: String, value: Data) {
         let characteristicName = description.isEmpty ? uuid : description
         let hexString = value.map { String(format: "%02X", $0) }.joined(separator: " ")
@@ -738,6 +741,26 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
             }
         }
     }
+    */
+    
+    func onValue(serviceId: String, characteristicId: String, descriptorId: String, uuid: String, description: String, value: Data) {
+        let normalizedUUID = uuid.uppercased().replacingOccurrences(of: "-", with: "")
+       // print("onValue received for UUID: \(normalizedUUID)")
+
+        let hexString = value.map { String(format: "%02X", $0) }.joined(separator: " ")
+        //print("Received raw bytes: \(hexString)")
+
+        DispatchQueue.main.async {
+            if normalizedUUID.contains("DF01") {
+                // This matches DF01 anywhere in UUID
+                DispatchQueue.main.async {
+                    self.connectionStatus = "Received: \(String(data: value, encoding: .utf8) ?? hexString)"
+                }
+            }
+        }
+    }
+
+    
     
     func sendBytes(_ bytes: [UInt8]) {
         guard let writable = writableCharacteristic else {
