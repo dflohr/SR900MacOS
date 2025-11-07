@@ -28,9 +28,14 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     @Published var isScanning = false
     @Published var sr900Device: (name: String, macAddress: String)? = nil
     @Published var connectionStatus: String = "Not Connected"
+    @Published var receivedMAC: String = ""
     
     // IPWorksBLE for connections
     private var bleClient: BLEClient
+    
+    // MARK: - Protocol Handler Properties
+    private var messageProtocol: MessageProtocol!
+    private var requestForMac: RequestForMac!
     
     // CoreBluetooth for proper name extraction
     private var centralManager: CBCentralManager!
@@ -47,6 +52,16 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     override init() {
         bleClient = BLEClient()
         super.init()
+        
+        // Initialize message protocol
+        messageProtocol = MessageProtocol()
+        
+        // Pass BLEManager reference to MessageProtocol
+        messageProtocol.bleManager = self
+        
+        // Initialize RequestForMac with the message protocol
+        requestForMac = RequestForMac(messageProtocol: messageProtocol)
+        
         bleClient.runtimeLicense = "3131434A4D444E5852463230323631313035423554433134333600444E5842574A4746464246470030303030303030300000395A385655534248335A53530000"
         // Initialize IPWorksBLE
         bleClient.delegate = self
@@ -98,6 +113,30 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         }
     }
     
+    /// Manually send MAC request message
+    func sendMacRequest() {
+        guard isConnected else {
+            print("⚠️ Not connected - cannot send MAC request")
+            connectionStatus = "Not connected"
+            return
+        }
+        
+        guard writableCharacteristic != nil else {
+            print("⚠️ No writable characteristic - cannot send MAC request")
+            connectionStatus = "No writable characteristic"
+            return
+        }
+        
+        print("═══════════════════════════════════")
+        print("📤 Manually sending MAC request...")
+        
+        messageProtocol.BLE_Connected = 1
+        requestForMac.RequestMacMessage()
+        
+        connectionStatus = "MAC Request Sent"
+        print("═══════════════════════════════════")
+    }
+    
     /// Send data to the SR900 device via the writable DF02 characteristic
     func sendData(_ text: String) {
         guard let writable = writableCharacteristic else {
@@ -128,6 +167,36 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
             } catch let error {
                 DispatchQueue.main.async {
                    // print("✗ Failed to write: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+    
+    /// Send raw bytes via BLE (used by MessageProtocol)
+    private func sendDataViaBLE(_ data: Data) {
+        guard let writable = writableCharacteristic else {
+            print("⚠ No writable characteristic found (DF02)")
+            connectionStatus = "No writable characteristic"
+            return
+        }
+        
+        print("📤 Sending bytes to \(writable.uuid): \(data.count) bytes")
+        print("   Hex: \(data.map { String(format: "%02X", $0) }.joined(separator: " "))")
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                try self.bleClient.writeValue(
+                    serviceId: writable.serviceId,
+                    characteristicId: writable.characteristicId,
+                    descriptorId: "",
+                    value: data
+                )
+                DispatchQueue.main.async {
+                    print("✓ MAC request message sent successfully")
+                }
+            } catch let error {
+                DispatchQueue.main.async {
+                    print("✗ Failed to send MAC request: \(error.localizedDescription)")
                 }
             }
         }
@@ -356,7 +425,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                     
                     // Check if this is DF02 for writing
                     if charId.contains("DF00DF020000") || charId.hasPrefix("DF00DF02") || uuid.hasPrefix("DF00DF02") {
-                       // print("    ✏️ This is DF02 - will use for writing")
+                        print("    ✏️ This is DF02 - will use for writing")
                         writableCharacteristic = (
                             serviceId: service.id,
                             characteristicId: characteristic.id,
@@ -364,16 +433,16 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                         )
                     }
                     
-                    // Subscribe to this characteristic for notifications
+                    // Try to subscribe to this characteristic for notifications
                     do {
                         try bleClient.subscribe(
                             serviceId: service.id,
                             characteristicId: characteristic.id
                         )
-                      //  print("✓ Successfully subscribed to \(characteristic.uuid)!")
+                        print("    ✓ Successfully subscribed to \(characteristic.uuid)")
                         subscribedCount += 1
                     } catch let subscribeError {
-                      //  print("✗ Failed to subscribe: \(subscribeError.localizedDescription)")
+                        print("    ⚠️ Could not subscribe (may not support notifications): \(subscribeError.localizedDescription)")
                     }
                 }
             }
@@ -389,33 +458,40 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         }
         
         if writableCharacteristic != nil {
-            // print("✓ Writable DF02 characteristic ready for commands")
+            print("✓ Found DF02 characteristic - ready for commands")
             
-            // Wait 2 seconds after "Connected & Subscribed"
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                // Clear the status textbox
-                self.connectionStatus = ""
-            }
-        }
-        /*
-                // Send "Hello World"
-               // print("Sending test message...")
-                self.sendData("Hello Sam")
+            // Auto-send MAC request after connection (now with correct header!)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                print("═══════════════════════════════════")
+                print("✅ BLE Setup Complete - Sending MAC Request")
                 
-                // Immediately display "Message sent"
-                self.connectionStatus = "Message sent"
+                // Set BLE_Connected
+                self.messageProtocol.BLE_Connected = 1
                 
-                // Clear textbox after 2 seconds
+                // Send the MAC request message
+                self.requestForMac.RequestMacMessage()
+                
+                print("📤 MAC request sent with correct header")
+                print("⏳ Waiting for MAC address response...")
+                print("═══════════════════════════════════")
+                
+                // Update UI
+                DispatchQueue.main.async {
+                    self.connectionStatus = "MAC Request Sent"
+                }
+                
+                // Clear status after 2 seconds
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                     self.connectionStatus = ""
                 }
             }
         } else {
-          //  print("⚠ No writable DF02 characteristic found")
+            print("⚠ No DF02 characteristic found")
         }
-        */
+        
       ///  print("═══════════════════════════════════")
     }
+
     
     func disconnectDevice() {
         connectionStatus = "Disconnecting..."
@@ -428,7 +504,9 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                 DispatchQueue.main.async {
                     self.isConnected = false
                     self.writableCharacteristic = nil
+                    self.messageProtocol.BLE_Connected = 0
                     self.connectionStatus = "Disconnected"
+                    self.receivedMAC = ""
                   //  print("✓ Disconnected from SR900")
                    // print("═══════════════════════════════════")
                     
@@ -639,6 +717,47 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         }
     }
     
+    /*
+    func onDiscovered(gattType: Int32, serviceId: String, characteristicId: String, descriptorId: String, uuid: String, description: String) {
+        switch gattType {
+        case 1:
+            print("Service discovered: \(description.isEmpty ? uuid : description)")
+        case 2:
+            print("Characteristic discovered: \(description.isEmpty ? uuid : description)")
+            
+            let normalizedCharId = characteristicId.uppercased().replacingOccurrences(of: "-", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let normalizedUuid = uuid.uppercased().replacingOccurrences(of: "-", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            if normalizedCharId.hasPrefix("DF00DF01") || normalizedUuid.hasPrefix("DF00DF01") {
+                // DF01 detected (read)
+                print("📖 DF01 characteristic detected (read)")
+                // Store or handle DF01 as needed
+            }
+            
+            if normalizedCharId.hasPrefix("DF00DF02") || normalizedUuid.hasPrefix("DF00DF02") {
+                // DF02 detected (write)
+                print("✏️ DF02 characteristic detected (write)")
+                
+                if description.contains("WriteWithoutResponse") || description.contains("Write") {
+                    print("✅ DF02 supports write (with or without response)")
+                    // Store writable characteristic here, e.g.:
+                    writableCharacteristic = (serviceId: serviceId, characteristicId: characteristicId, uuid: uuid)
+                } else {
+                    print("⚠️ DF02 does NOT report write capability")
+                }
+            }
+            else {
+                print("NG on DF02 characteristic detected (write)")
+            }
+            
+        case 3:
+            print("Descriptor discovered: \(description.isEmpty ? uuid : description)")
+        default:
+            break
+        }
+    }
+*/
+    
     func onDiscovered(gattType: Int32, serviceId: String, characteristicId: String, descriptorId: String, uuid: String, description: String) {
         // gattType: 1=Service, 2=Characteristic, 3=Descriptor
         switch gattType {
@@ -695,72 +814,50 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     func onUnsubscribed(serviceId: String, characteristicId: String, uuid: String, description: String) {
        // print("Unsubscribed from: \(description.isEmpty ? uuid : description)")
     }
-    /*
+    
     func onValue(serviceId: String, characteristicId: String, descriptorId: String, uuid: String, description: String, value: Data) {
-        let characteristicName = description.isEmpty ? uuid : description
-        
-        // Convert data to hex string for display
-        let hexString = value.map { String(format: "%02X", $0) }.joined(separator: " ")
-        
-        // Build display message
-        var displayMessage = "📥 Value from \(characteristicName):\n"
-        displayMessage += "   Bytes: \(value.count)\n"
-        displayMessage += "   Hex: \(hexString)"
-        
-        // Try to decode as UTF-8 string
-        if let stringValue = String(data: value, encoding: .utf8), !stringValue.isEmpty {
-            displayMessage += "\n   UTF-8: \(stringValue)"
-            
-        }
-        self.connectionStatus = "Received: \(String(data: value, encoding: .utf8) ?? hexString)"
-       // print(displayMessage)
-        
-        // TODO: Parse SR900-specific data formats here
-        // (temperature readings, roast profiles, status updates, etc.)
-    }
-    */
-    /*
-    func onValue(serviceId: String, characteristicId: String, descriptorId: String, uuid: String, description: String, value: Data) {
-        let characteristicName = description.isEmpty ? uuid : description
-        let hexString = value.map { String(format: "%02X", $0) }.joined(separator: " ")
-        
-        var displayMessage = "📥 Value from \(characteristicName):\n"
-        displayMessage += "   Bytes: \(value.count)\n"
-        displayMessage += "   Hex: \(hexString)"
-        
-        if let stringValue = String(data: value, encoding: .utf8), !stringValue.isEmpty {
-            displayMessage += "\n   UTF-8: \(stringValue)"
-        }
-        
-        print(displayMessage)
-        
         let normalizedUUID = uuid.uppercased().replacingOccurrences(of: "-", with: "")
-        if normalizedUUID.hasPrefix("DF01") {
+        let hexString = value.map { String(format: "%02X", $0) }.joined(separator: " ")
+        
+        print("📥 Received data from \(normalizedUUID):")
+        print("   Hex: \(hexString)")
+        print("   Bytes: \(value.count)")
+        
+        // Parse the MAC address response (message type 0x27)
+        if value.count >= 12 {
+            // Check if this is a 0x27 message (MAC address response)
+            // Typical format: [0x20, header[4], 0x00, 0x27, MAC[6], random bytes, checksum, 0x30, 0x03]
+            if value[6] == 0x00 && value[7] == 0x27 {
+                // Extract MAC address (bytes 8-13)
+                let macBytes = Array(value[8..<14])
+                messageProtocol.MAC = macBytes
+                
+                let macString = macBytes.map { String(format: "%02X", $0) }.joined(separator: ":")
+                
+                print("═══════════════════════════════════")
+                print("✅ Received MAC Address Response!")
+                print("   MAC: \(macString)")
+                print("═══════════════════════════════════")
+                
+                DispatchQueue.main.async {
+                    self.receivedMAC = macString
+                    self.connectionStatus = "MAC: \(macString)"
+                }
+                
+                // Clear status after 3 seconds
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                    self.connectionStatus = ""
+                }
+            }
+        }
+        
+        // Also display in status for DF01 messages (your existing logic)
+        if normalizedUUID.contains("DF01") {
             DispatchQueue.main.async {
                 self.connectionStatus = "Received: \(String(data: value, encoding: .utf8) ?? hexString)"
             }
         }
     }
-    */
-    
-    func onValue(serviceId: String, characteristicId: String, descriptorId: String, uuid: String, description: String, value: Data) {
-        let normalizedUUID = uuid.uppercased().replacingOccurrences(of: "-", with: "")
-       // print("onValue received for UUID: \(normalizedUUID)")
-
-        let hexString = value.map { String(format: "%02X", $0) }.joined(separator: " ")
-        //print("Received raw bytes: \(hexString)")
-
-        DispatchQueue.main.async {
-            if normalizedUUID.contains("DF01") {
-                // This matches DF01 anywhere in UUID
-                DispatchQueue.main.async {
-                    self.connectionStatus = "Received: \(String(data: value, encoding: .utf8) ?? hexString)"
-                }
-            }
-        }
-    }
-
-    
     
     func sendBytes(_ bytes: [UInt8]) {
         guard let writable = writableCharacteristic else {
@@ -771,29 +868,59 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         
         let data = Data(bytes)
         
-        print("📤 Sending bytes to \(writable.uuid): \(data.count) bytes")
-        
-        DispatchQueue.global(qos: .userInitiated).async {
+        print("📤 Attempting to send \(data.count) bytes")
+        print("   Service ID: \(writable.serviceId)")
+        print("   Characteristic ID: \(writable.characteristicId)")
+        print("   UUID: \(writable.uuid)")
+        print("   Data (hex): \(data.map { String(format: "%02X", $0) }.joined(separator: " "))")
+       
+        // IPWorksBLE write operations should be on main thread
+        DispatchQueue.main.async {
+            // CRITICAL: Set the service before writing
+            self.bleClient.service = writable.serviceId
+            
+            print("🔧 Set active service to: \(writable.serviceId)")
+            print("🔧 Calling postValue...")
+            self.connectionStatus = "Initiating Communication to SR900"
             do {
-                try self.bleClient.writeValue(
+                try self.bleClient.postValue(
                     serviceId: writable.serviceId,
                     characteristicId: writable.characteristicId,
-                    descriptorId: "",
                     value: data
+
                 )
+               // self.connectionStatus = "Initial Request Made:"
+                print("✅ Write command completed successfully!")
+                
                 DispatchQueue.main.async {
-                    print("✓ Write initiated to \(writable.uuid)")
+                    self.connectionStatus = "Message Sent"
                 }
-            } catch let error {
+                
+            } catch let error as NSError {
+                print("═══════════════════════════════════")
+                print("❌ WRITE ERROR:")
+                print("   Error Code: \(error.code)")
+                print("   Description: \(error.localizedDescription)")
+                print("═══════════════════════════════════")
+                
+                // Error 713 specific handling
+                if error.code == 713 {
+                    print("⚠️ ERROR 713 - Possible causes:")
+                    print("   1. Characteristic doesn't support writing")
+                    print("   2. Need to use a different characteristic")
+                    print("   3. Device requires specific write method")
+                    print("")
+                    print("💡 Suggestion: Check if your C# code uses a different")
+                    print("   characteristic UUID for writing")
+                }
+                
                 DispatchQueue.main.async {
-                    print("✗ Failed to write: \(error.localizedDescription)")
+                    self.connectionStatus = "Write Failed (713)"
                 }
             }
         }
     }
     
-    
-
     func onWriteResponse(serviceId: String, characteristicId: String, descriptorId: String, uuid: String, description: String) {
         //print("Write response: \(description.isEmpty ? uuid : description)")
     }
