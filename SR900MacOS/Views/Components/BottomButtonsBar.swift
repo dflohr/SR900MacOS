@@ -57,7 +57,16 @@ struct BottomButtonsBar: View {
         case "SETTINGS": return onSettingsButtonPressed ?? { print("SETTINGS button pressed") }
         case "READ-ME": return {
                print("READ-ME button pressed - sending Hello World via DF02")
-               bleManager.sendData("Hello World")
+            // bleManager.sendData("Hello World")
+         
+            let bytesToSend: [UInt8] = [0x01, 0x02, 0xA3, 0xFF]
+            bleManager.sendBytes(bytesToSend)
+            
+            
+            
+            
+            
+            
            }
         default: return { print("\(label) button pressed") }
         }

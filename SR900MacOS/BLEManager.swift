@@ -693,7 +693,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     func onUnsubscribed(serviceId: String, characteristicId: String, uuid: String, description: String) {
        // print("Unsubscribed from: \(description.isEmpty ? uuid : description)")
     }
-    
+    /*
     func onValue(serviceId: String, characteristicId: String, descriptorId: String, uuid: String, description: String, value: Data) {
         let characteristicName = description.isEmpty ? uuid : description
         
@@ -716,6 +716,59 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         // TODO: Parse SR900-specific data formats here
         // (temperature readings, roast profiles, status updates, etc.)
     }
+    */
+    func onValue(serviceId: String, characteristicId: String, descriptorId: String, uuid: String, description: String, value: Data) {
+        let characteristicName = description.isEmpty ? uuid : description
+        let hexString = value.map { String(format: "%02X", $0) }.joined(separator: " ")
+        
+        var displayMessage = "📥 Value from \(characteristicName):\n"
+        displayMessage += "   Bytes: \(value.count)\n"
+        displayMessage += "   Hex: \(hexString)"
+        
+        if let stringValue = String(data: value, encoding: .utf8), !stringValue.isEmpty {
+            displayMessage += "\n   UTF-8: \(stringValue)"
+        }
+        
+        print(displayMessage)
+        
+        let normalizedUUID = uuid.uppercased().replacingOccurrences(of: "-", with: "")
+        if normalizedUUID.hasPrefix("DF01") {
+            DispatchQueue.main.async {
+                self.connectionStatus = "Received: \(String(data: value, encoding: .utf8) ?? hexString)"
+            }
+        }
+    }
+    
+    func sendBytes(_ bytes: [UInt8]) {
+        guard let writable = writableCharacteristic else {
+            print("⚠ No writable characteristic found (DF02)")
+            connectionStatus = "No writable characteristic"
+            return
+        }
+        
+        let data = Data(bytes)
+        
+        print("📤 Sending bytes to \(writable.uuid): \(data.count) bytes")
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                try self.bleClient.writeValue(
+                    serviceId: writable.serviceId,
+                    characteristicId: writable.characteristicId,
+                    descriptorId: "",
+                    value: data
+                )
+                DispatchQueue.main.async {
+                    print("✓ Write initiated to \(writable.uuid)")
+                }
+            } catch let error {
+                DispatchQueue.main.async {
+                    print("✗ Failed to write: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+    
     
 
     func onWriteResponse(serviceId: String, characteristicId: String, descriptorId: String, uuid: String, description: String) {
