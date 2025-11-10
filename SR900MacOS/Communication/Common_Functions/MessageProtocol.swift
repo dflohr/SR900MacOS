@@ -110,7 +110,8 @@ class MessageProtocol {
             
             if let manager = bleManager {
                 print("✅ BLEManager exists - sending bytes")
-                manager.sendBytes(TX_B)
+              // manager.sendBytes(TX_B)
+                manager.sendCommand(TX_B)
             } else {
                 print("❌ BLEManager is NIL - cannot send bytes")
             }

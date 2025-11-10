@@ -203,6 +203,7 @@ struct USBConnectButton: View {
 // MARK: - Connection Activity Button
 struct ConnectionActivityButton: View {
     @ObservedObject var controlState: MainControlState
+    @EnvironmentObject var bleManager: BLEManager
     
     var body: some View {
         Button(action: {
@@ -216,8 +217,8 @@ struct ConnectionActivityButton: View {
                 
                 Spacer()
                 
-                ActivityIndicator(label: "IN", isActive: controlState.connectionActivityIN)
-                ActivityIndicator(label: "OUT", isActive: controlState.connectionActivityOUT)
+                ActivityIndicator(label: "IN", isActive: bleManager.activityIN, activeColor: .red)
+                ActivityIndicator(label: "OUT", isActive: bleManager.activityOUT, activeColor: .blue)
             }
             .padding(.horizontal, 10)
             .frame(width: 230, height: 51)
@@ -249,6 +250,7 @@ struct ConnectionIndicator: View {
 struct ActivityIndicator: View {
     let label: String
     let isActive: Bool
+    var activeColor: Color = .green  // Default to green for backwards compatibility
     
     var body: some View {
         VStack(spacing: 2) {
@@ -259,7 +261,7 @@ struct ActivityIndicator: View {
             
             Circle()
                 .strokeBorder(Color.gray, lineWidth: 2)
-                .background(Circle().fill(isActive ? Color.green : Color.white))
+                .background(Circle().fill(isActive ? activeColor : Color.white))
                 .frame(width: 14, height: 14)
                 .offset(y: -2)
         }
