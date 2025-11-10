@@ -106,7 +106,7 @@ struct ProfilePanelView: View {
                                             .font(.system(size: 12, weight: .bold))
                                     }
                                     .padding(.vertical, 5)
-                                    .offset(x: 15)
+//                                    .offset(x: 15)
                                     .background(Color.white.opacity(0.5))
                                     .border(Color.black, width: 1)
                                     
@@ -130,7 +130,7 @@ struct ProfilePanelView: View {
                                                 .background(Color.white)
                                                 .border(Color.black, width: 1)
                                         }
-                                        .offset(x: 10)
+//                                        .offset(x: 10)
                                         .background(Color.white.opacity(0.3))
                                         .border(Color.black, width: 1)
                                     }
@@ -159,11 +159,11 @@ struct ProfilePanelView: View {
                                         HStack {
                                             RoundedRectangle(cornerRadius: 3)
                                                 .stroke(Color.black, lineWidth: 2)
-                                                .frame(width: 18, height: 18)
+                                                .frame(width: 14, height: 14)
                                                 .overlay(
                                                     RoundedRectangle(cornerRadius: 2)
                                                         .fill(selectedRoast == index ? Color.blue : Color.clear)
-                                                        .frame(width: 12, height: 12)
+                                                        .frame(width: 10, height: 10)
                                                 )
                                             
                                             Text(roastTypes[index])
@@ -248,7 +248,7 @@ struct ProfilePanelView: View {
                                         .border(Color.black, width: 2)
                                         .frame(height: 40)
                                     
-                                    VStack {
+                                    HStack(spacing: 0) {
                                         Toggle("", isOn: $onRoaster)
                                             .labelsHidden()
                                             .toggleStyle(CheckboxToggleStyle())
@@ -256,17 +256,18 @@ struct ProfilePanelView: View {
                                             .font(.system(size: 9, weight: .bold))
                                             .multilineTextAlignment(.center)
                                     }
-                                    .offset(y: 3)
+//                                    .offset(y: 3)
+                                    .padding(.horizontal, 5)
                                     .frame(width: 70, height: 40)
                                     .background(Color.white)
                                     .border(Color.black, width: 2)
                                 }
                             }
                             .padding(.horizontal, 30)
-                            .padding(.bottom, 25)
+                            .padding(.bottom, 40)
                         }
 //                        .padding(.horizontal, 100)
-                        .padding(.top, 180)
+                        .padding(.top, 120)
                     }
 //                    .frame(width: 400, height: 688)
 //                    .offset(y: 20)
@@ -285,11 +286,11 @@ struct CheckboxToggleStyle: ToggleStyle {
         HStack {
             RoundedRectangle(cornerRadius: 3)
                 .stroke(Color.black, lineWidth: 2)
-                .frame(width: 18, height: 18)
+                .frame(width: 14, height: 14)
                 .overlay(
                     RoundedRectangle(cornerRadius: 2)
                         .fill(configuration.isOn ? Color.blue : Color.clear)
-                        .frame(width: 12, height: 12)
+                        .frame(width: 10, height: 10)
                 )
                 .onTapGesture {
                     configuration.isOn.toggle()

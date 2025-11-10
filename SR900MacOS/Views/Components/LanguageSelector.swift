@@ -12,7 +12,7 @@ struct LanguageSelector: View {
     @Binding var languageIsEnglish: Bool
     
     var body: some View {
-        VStack {
+        VStack(spacing: 10) {
             Text("Language")
                 .font(.openSansBold(size: 18))
             

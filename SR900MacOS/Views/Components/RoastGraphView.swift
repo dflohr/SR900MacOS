@@ -68,8 +68,8 @@ struct RoastGraphView: View {
                         .font(.openSansBold(size: 10))
                         .foregroundColor(.black)
                 }
-                .padding(.horizontal, 50)
-                .padding(.vertical, 145)
+                .padding(.horizontal, 70)
+                .padding(.vertical, 110)
 //                .background(Color.white.opacity(0.85))
 //                .frame(maxWidth: .infinity)
 //                .offset(y: 10)

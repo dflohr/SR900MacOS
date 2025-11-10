@@ -40,7 +40,7 @@ struct SettingsPanelView: View {
             //                .fill(Color(red: 0.93, green: 0.93, blue: 0.93))
             //                .frame(width: 310, height: 690)
             //                .overlay(
-            VStack(spacing:15) {
+            VStack(spacing:20) {
                 
                 //                        Text("SETTINGS")
                 //                            .font(.openSansBold(size: 22))
@@ -80,7 +80,7 @@ struct SettingsPanelView: View {
                 // ✅ Save Graphs
                 
                 // Graph Background
-                VStack(spacing: 8) {
+                VStack(spacing: 10) {
                     Text("Graph Background")
                         .font(.openSansBold(size: 18))
                     
@@ -149,7 +149,7 @@ struct SettingsPanelView: View {
             }
             //                    .padding(50)
             .padding(.horizontal, 50)
-            .padding(.top, 180)
+            .padding(.top, 120)
             
             //                )
             //                .offset(x: 22, y: 60)

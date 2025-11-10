@@ -143,9 +143,9 @@ struct FramedRectangleContent: View {
                     .font(.custom("OpenSans-Bold", size: 24))
                     .foregroundColor(.black)
                     .background(Color(red: 0.93, green: 0.93, blue: 0.93).opacity(0.9))
-                    .padding(.horizontal, 10)
+                    .padding(.horizontal, 0)
                     .padding(.vertical, 5)
-                    .offset(y: -244)  // ✅ Move title up more
+                    .offset(y: -300)  // ✅ Move title up more
                 
                 // ✅ Add the graph view
                 RoastGraphView(width: width, imageName: imageName)
@@ -172,7 +172,7 @@ struct FramedRectangleContent: View {
                     .background(Color(red: 0.93, green: 0.93, blue: 0.93).opacity(0.9))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .offset(y: -244)
+                    .offset(y: -300)
             }
             if number == "4" {
                 Text("SETTINGS")
@@ -181,7 +181,7 @@ struct FramedRectangleContent: View {
                     .background(Color(red: 0.93, green: 0.93, blue: 0.93).opacity(0.9))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
-                    .offset(y: -244)
+                    .offset(y: -300)
             }
         }
     }
