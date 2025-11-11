@@ -23,7 +23,8 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     private let enableAD0x09Discovery: Bool = true
     
     // MARK: - Published Properties
-    
+    @Published var controlState = ControlState()
+    private var messageHandler: IncomingMessageHandler!  // Message parser
     @Published var isConnected = false
     @Published var isScanning = false
     @Published var sr900Device: (name: String, macAddress: String)? = nil
@@ -38,8 +39,8 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     @State private var df02CharacteristicId: String = ""
     private let DF02_SERVICE_ID = "DF0000000000"
     private let DF02_CHARACTERISTIC_ID = "DF00DF020000"
-   private let DF01_SERVICE_ID = "DF0000000000"
-   private let DF01_CHARACTERISTIC_ID = "DF00DF010000"
+    private let DF01_SERVICE_ID = "DF0000000000"
+    private let DF01_CHARACTERISTIC_ID = "DF00DF010000"
     // IPWorksBLE for connections
     private var bleClient: BLEClient
     
@@ -61,11 +62,13 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     
     override init() {
         bleClient = BLEClient()
+        centralManager = CBCentralManager(delegate: nil, queue: nil)
+        
         super.init()
         
         // Initialize message protocol
         messageProtocol = MessageProtocol()
-        
+        messageHandler = IncomingMessageHandler(controlState: controlState)
         // Pass BLEManager reference to MessageProtocol
         messageProtocol.bleManager = self
         
@@ -127,9 +130,10 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         print("📥 RX (\(uuid)) [34 bytes]: \(hex)")
 
         // --- MAC RESPONSE CHECK (0x27) ---
+        // Keep MAC handling in BLEManager since it updates BLEManager properties
         if bytes.count >= 14,
-           bytes[6] == 0x00,
-           bytes[7] == 0x27 {
+           bytes[5] == 0x00,
+           bytes[6] == 0x27 {
 
             let mac = bytes[8...13].map { String(format: "%02X", $0) }.joined(separator: ":")
 
@@ -144,6 +148,11 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
             }
             return
         }
+        
+        // --- DELEGATE MESSAGE PARSING TO IncomingMessageHandler ---
+        // All other message types are handled by the message parser
+        messageHandler.processMessage(bytes)
+        
         // --- Normal displayed message ---
         let hexDisplay = lastReceivedBytes.map { String(format: "%02X", $0) }.joined(separator: " ")
 
@@ -151,6 +160,83 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
             self.connectionStatus = "Received: \(hexDisplay)"
         }
     }
+  
+    /*
+    func onValue(serviceId: String,
+                 characteristicId: String,
+                 descriptorId: String,
+                 uuid: String,
+                 description: String,
+                 value: Data) {
+
+        // Always 34 bytes
+        let bytes = [UInt8](value)
+        lastReceivedBytes = bytes
+        
+        // Trigger IN activity indicator blink
+        blinkActivityIN()
+
+        let hex = bytes.map { String(format: "%02X", $0) }.joined(separator: " ")
+        print("📥 RX (\(uuid)) [34 bytes]: \(hex)")
+
+        // --- MAC RESPONSE CHECK (0x27) ---
+        if bytes.count >= 14,
+           bytes[5] == 0x00,
+           bytes[6] == 0x27 {
+
+            let mac = bytes[8...13].map { String(format: "%02X", $0) }.joined(separator: ":")
+
+            print("✅ MAC Response → \(mac)")
+
+            DispatchQueue.main.async {
+                self.receivedMAC = mac
+                self.connectionStatus = "MAC: \(mac)"
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                self.connectionStatus = ""
+            }
+            return
+        }
+
+        if bytes.count > 7 && bytes[6] == 0x21 {
+            // Parse actual temperature from bytes
+            // TODO: Verify the correct byte positions for SR900 temperature data
+            // These byte positions are PLACEHOLDERS - adjust based on SR900 protocol documentation
+            
+            let rawTemp: Int
+            if bytes.count >= 10 {
+                // Option 1: If temperature is 16-bit value (2 bytes) - BIG ENDIAN
+                rawTemp = (Int(bytes[15]) << 8) | Int(bytes[16])
+                
+                // Option 2: If temperature is 16-bit value (2 bytes) - LITTLE ENDIAN
+                // rawTemp = (Int(bytes[9]) << 8) | Int(bytes[8])
+                
+                // Option 3: If temperature is single byte value
+                // rawTemp = Int(bytes[8])
+                
+                // Option 4: If temperature needs conversion formula:
+                // let rawValue = (Int(bytes[8]) << 8) | Int(bytes[9])
+                // rawTemp = (rawValue * 9 / 5) + 32  // Example: Celsius to Fahrenheit
+            } else {
+                rawTemp = 66 // Fallback value
+            }
+            
+            DispatchQueue.main.async {
+                self.controlState.beanTempValue = rawTemp
+                print("🌡️ Updated temperature to: \(rawTemp)°F")
+            }
+        }
+        
+        
+        // --- Normal displayed message ---
+        let hexDisplay = lastReceivedBytes.map { String(format: "%02X", $0) }.joined(separator: " ")
+
+        DispatchQueue.main.async {
+            self.connectionStatus = "Received: \(hexDisplay)"
+        }
+    }
+    
+    */
     //SENDING
     func sendCommand(_ bytes: [UInt8]) {  //From MessageProtocol
 

@@ -11,6 +11,61 @@ struct MainControlInterface: View {
     @Binding var rectangle3Extended: Bool
     @Binding var rectangle4Extended: Bool
     
+    @EnvironmentObject var bleManager: BLEManager
+    
+    private var controlState: ControlState {
+        bleManager.controlState
+    }
+    
+    var body: some View {
+        let buttonLabels = ["GRAPH", "PROFILES", "SETTINGS", "READ-ME"]
+        
+        HStack(alignment: .top, spacing: 0) {
+            VStack(spacing: 0) {
+                HeaderSection()
+                ConnectionSection(controlState: controlState)
+                TimeInputSection(controlState: controlState)
+                ControlButtonsSection(controlState: controlState)
+                Spacer()
+                DisplaySection(controlState: controlState)
+                BottomSection()
+            }
+            .frame(width: 567, height: 728)
+            .background(Color(red: 0.93, green: 0.93, blue: 0.93))
+//            .border(Color.black, width: 2)           // ✅ Black border
+            .padding()
+        }
+//        .frame(width: 607)
+
+        
+        BottomButtonsBar(
+            buttonLabels: buttonLabels,
+            width: width,
+            onGraphButtonPressed: onGraphButtonPressed,
+            onProfilesButtonPressed: onProfilesButtonPressed,
+            onSettingsButtonPressed: onSettingsButtonPressed,
+            rectangle2Extended: $rectangle2Extended,
+            rectangle3Extended: $rectangle3Extended,
+            rectangle4Extended: $rectangle4Extended
+        )
+    }
+}
+
+
+/*
+import SwiftUI
+import Combine
+
+struct MainControlInterface: View {
+    let width: CGFloat
+    let onGraphButtonPressed: (() -> Void)?
+    let onProfilesButtonPressed: (() -> Void)?
+    let onSettingsButtonPressed: (() -> Void)?
+    
+    @Binding var rectangle2Extended: Bool
+    @Binding var rectangle3Extended: Bool
+    @Binding var rectangle4Extended: Bool
+    
     @StateObject private var controlState = MainControlState()
     
     var body: some View {
@@ -78,3 +133,4 @@ class MainControlState: ObservableObject {
         beanTempValue -= 1
     }
 }
+*/
