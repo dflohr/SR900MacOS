@@ -23,6 +23,12 @@ class StartProfileRoast_0x1A {
     
     /// Starts a saved profile roast on the roaster device
     func startSavedProfileRoast() {
+        // Check if BLE is connected before sending
+        guard messageProtocol.BLE_Connected == 1 else {
+            print("⚠️ StartProfileRoast: BLE not connected. Message not sent.")
+            return
+        }
+        
         // Get Header (bytes 0-4)
         messageProtocol.Message_Header()
         
