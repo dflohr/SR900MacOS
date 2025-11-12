@@ -23,13 +23,14 @@ class MessageProtocol {
     
     /// Builds first 5 bytes of the message
     func Message_Header() {
-        // Generate random header
+      /*
+       // Generate random header
         if !initialMessage {  // Use after first 0x26 message to seed roaster
             for ran in 0..<4 {
                 headers[ran] = rand_num(min: 1, max: 255)
             }
         }
-        
+        */
         // Clear TX_B buffer
         TX_B = Array(repeating: 0, count: 34)
         

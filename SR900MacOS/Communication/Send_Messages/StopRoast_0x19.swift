@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-class StartProfileRoast_0x1A {
+class StopRoast_0x19 {
     
     // MARK: - Properties
     
@@ -22,7 +22,7 @@ class StartProfileRoast_0x1A {
     // MARK: - Request MAC Message Function
     
     /// Starts a saved profile roast on the roaster device
-    func startSavedProfileRoast() {
+    func stopRoast() {
         // Get Header (bytes 0-4)
         messageProtocol.Message_Header()
         
@@ -31,7 +31,7 @@ class StartProfileRoast_0x1A {
         messageProtocol.d_byte += 1
         
         // Set message type (byte 6) - 0x1A for Start Profile Roast
-        messageProtocol.TX_B[messageProtocol.d_byte] = 0x1A
+        messageProtocol.TX_B[messageProtocol.d_byte] = 0x19
         messageProtocol.d_byte += 1
 
         // Add MAC address (bytes 7-12)
@@ -56,3 +56,5 @@ class StartProfileRoast_0x1A {
     
 
 }
+
+

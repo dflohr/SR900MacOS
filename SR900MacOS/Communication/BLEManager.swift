@@ -33,6 +33,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     @Published var lastReceivedBytes: [UInt8] = Array(repeating: 0, count: 34)
     @Published var activityIN: Bool = false
     @Published var activityOUT: Bool = false
+    @Published var keySeed: [UInt8] = [0, 0, 0, 0]  // 4-byte array for key seed (from bytes 7-10 when byte[6]=0x26)
     @State private var df01ServiceId: String = ""
     @State private var df01CharacteristicId: String = ""
     @State private var df02ServiceId: String = ""
@@ -45,8 +46,12 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     private var bleClient: BLEClient
     
     // MARK: - Protocol Handler Properties
-    private var messageProtocol: MessageProtocol!
+    var messageProtocol: MessageProtocol!
+    //private var messageProtocol: MessageProtocol!
+   //StartProfileRoast_0x1 @Published var messageProtocol = MessageProtocol()
+    
     private var requestForMac: RequestForMac!
+    private var startProfileRoast: StartProfileRoast_0x1A!
     
     // CoreBluetooth for proper name extraction
     private var centralManager: CBCentralManager!
@@ -68,12 +73,16 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         
         // Initialize message protocol
         messageProtocol = MessageProtocol()
-        messageHandler = IncomingMessageHandler(controlState: controlState)
+       // messageHandler = IncomingMessageHandler(controlState: controlState)
+        messageHandler = IncomingMessageHandler(controlState: controlState, bleManager: self)
         // Pass BLEManager reference to MessageProtocol
         messageProtocol.bleManager = self
         
         // Initialize RequestForMac with the message protocol
         requestForMac = RequestForMac(messageProtocol: messageProtocol)
+        
+        // Initialize StartProfileRoast with the message protocol
+        startProfileRoast = StartProfileRoast_0x1A(messageProtocol: messageProtocol)
         
         bleClient.runtimeLicense = "3131434A4D444E5852463230323631313035423554433134333600444E5842574A4746464246470030303030303030300000395A385655534248335A53530000"
         // Initialize IPWorksBLE
@@ -112,6 +121,39 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     
     // MARK: - Public Functions
     //RECEIVING
+    
+    func onValue(serviceId: String,
+                 characteristicId: String,
+                 descriptorId: String,
+                 uuid: String,
+                 description: String,
+                 value: Data) {
+
+        // Always 34 bytes
+        let bytes = [UInt8](value)
+        lastReceivedBytes = bytes
+        
+        // Trigger IN activity indicator blink
+        blinkActivityIN()
+
+        let hex = bytes.map { String(format: "%02X", $0) }.joined(separator: " ")
+        print("📥 RX (\(uuid)) [34 bytes]: \(hex)")
+
+        // --- DELEGATE ALL MESSAGE PARSING TO IncomingMessageHandler ---
+        // All message types (including 0x27 MAC address) are now handled by the message parser
+        messageHandler.processMessage(bytes)
+        
+        // Note: Removed the MAC handling code that was here - now in IncomingMessageHandler
+        // Note: Removed the temperature parsing code - already in IncomingMessageHandler
+        
+        // --- Update connection status with hex display ---
+        let hexDisplay = lastReceivedBytes.map { String(format: "%02X", $0) }.joined(separator: " ")
+
+        DispatchQueue.main.async {
+            self.connectionStatus = "Received: \(hexDisplay)"
+        }
+    }
+    /*
     func onValue(serviceId: String,
                  characteristicId: String,
                  descriptorId: String,
@@ -161,7 +203,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         }
     }
   
-    /*
+    
     func onValue(serviceId: String,
                  characteristicId: String,
                  descriptorId: String,
@@ -239,8 +281,17 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     */
     //SENDING
     func sendCommand(_ bytes: [UInt8]) {  //From MessageProtocol
-
+        let hex = bytes.map { String(format: "%02X", $0) }.joined(separator: " ")
         let data = Data(bytes)
+        
+        // Check if byte[6] = 0x26 and save bytes 7-10 to keySeed
+        if bytes.count >= 11 && bytes[6] == 0x26 {
+            DispatchQueue.main.async {
+                self.keySeed = Array(bytes[7...10])
+                let seedHex = self.keySeed.map { String(format: "%02X", $0) }.joined(separator: " ")
+                print("🔑 KeySeed captured (0x26): \(seedHex)")
+            }
+        }
         
         // Trigger OUT activity indicator blink
         blinkActivityOUT()
@@ -257,13 +308,27 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                     value: data
                 )
 
-                print("✅ DF02 Write Successful")
+                print("✅ DF02 Write Successful: \(hex)")
 
             } catch {
                 print("❌ DF02 Write Failed:", error)
             }
         }
     }
+    
+    // MARK: - Roast Commands
+    
+    /// Start a saved profile roast on the connected device
+    func startSavedProfileRoast() {
+        guard isConnected else {
+            print("⚠️ Cannot start roast - device not connected")
+            return
+        }
+        
+        print("🔥 Starting saved profile roast...")
+        startProfileRoast.startSavedProfileRoast()
+    }
+    
     /// Toggle connection: Connect if disconnected, Disconnect if connected
     func toggleConnection() {
         if isConnected {
