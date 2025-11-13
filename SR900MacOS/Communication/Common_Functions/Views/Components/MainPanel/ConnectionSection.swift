@@ -31,6 +31,16 @@ struct BLEConnectButton: View {
     @ObservedObject var controlState: ControlState
     @ObservedObject var bleManager: BLEManager
     
+    /// Button should only be enabled when:
+    /// 1. Already connected (to allow disconnect), OR
+    /// 2. connectionStatus is "SR900 Found" (device ready to connect), OR
+    /// 3. connectionStatus starts with "SR900 Found - AD 0x09:" (device found with complete name)
+    private var isButtonEnabled: Bool {
+        bleManager.isConnected || 
+        bleManager.connectionStatus == "SR900 Found" ||
+        bleManager.connectionStatus.hasPrefix("SR900 Found - AD 0x09:")
+    }
+    
     var body: some View {
         Button(action: {
             handleButtonAction()
@@ -44,7 +54,7 @@ struct BLEConnectButton: View {
 
                 Text("BLE Connect")
                     .font(.openSansBold(size: 14))
-                    .foregroundColor(.black)
+                    .foregroundColor(isButtonEnabled ? .black : .gray)
                     .lineLimit(nil)
                     .multilineTextAlignment(.center)
                     .lineSpacing(6)
@@ -56,13 +66,14 @@ struct BLEConnectButton: View {
             }
             .padding(.leading, 0)
             .frame(width: 147.5, height: 51)
-            .background(Color(red: 0.85, green: 0.75, blue: 0.6))
+            .background(isButtonEnabled ? Color(red: 0.85, green: 0.75, blue: 0.6) : Color(red: 0.7, green: 0.6, blue: 0.5))
             .overlay(
                 RoundedRectangle(cornerRadius: 0)
                     .stroke(Color.black, lineWidth: 2)
             )
         }
         .buttonStyle(PlainButtonStyle())
+        .disabled(!isButtonEnabled)
         .onAppear {
             controlState.displayText = bleManager.connectionStatus
             controlState.isConnected = bleManager.isConnected

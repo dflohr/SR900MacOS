@@ -52,6 +52,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     
     private var requestForMac: RequestForMac!
     private var startProfileRoast: StartProfileRoast_0x1A!
+    private var coolDown: CoolDown_0x18!
     
     // CoreBluetooth for proper name extraction
     private var centralManager: CBCentralManager!
@@ -83,6 +84,9 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         
         // Initialize StartProfileRoast with the message protocol
         startProfileRoast = StartProfileRoast_0x1A(messageProtocol: messageProtocol)
+        
+        // Initialize CoolDown with the message protocol
+        coolDown = CoolDown_0x18(messageProtocol: messageProtocol)
         
         bleClient.runtimeLicense = "3131434A4D444E5852463230323631313035423554433134333600444E5842574A4746464246470030303030303030300000395A385655534248335A53530000"
         // Initialize IPWorksBLE
@@ -327,6 +331,17 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         
         print("🔥 Starting saved profile roast...")
         startProfileRoast.startSavedProfileRoast()
+    }
+    
+    /// Start cooldown process on the connected device
+    func startCoolDown() {
+        guard isConnected else {
+            print("⚠️ Cannot start cooldown - device not connected")
+            return
+        }
+        
+        print("❄️ Starting cooldown...")
+        coolDown.CoolDown()
     }
     
     /// Toggle connection: Connect if disconnected, Disconnect if connected
@@ -855,10 +870,32 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
 
     
     func onDisconnected(statusCode: Int32, description: String) {
-      //  print("Disconnected: \(description)")
+        print("═══════════════════════════════════")
+        print("⚠️ Device Disconnected: \(description)")
+        print("   Status Code: \(statusCode)")
+        
         DispatchQueue.main.async {
+            // Reset connection state
             self.isConnected = false
             self.connectionStatus = "Disconnected"
+            self.writableCharacteristic = nil
+            self.messageProtocol.BLE_Connected = 0
+            self.receivedMAC = ""
+            
+            // Reset roast state
+            self.controlState.roastInProcess = false
+            print("   ✓ Reset roastInProcess to false")
+            
+            // Clear the device to force fresh discovery
+            self.sr900Device = nil
+            print("   ✓ Cleared device cache")
+            
+            // Restart scanning after a brief delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                print("🔄 Restarting scan for SR900 devices...")
+                print("═══════════════════════════════════")
+                self.startAutoScan()
+            }
         }
     }
    

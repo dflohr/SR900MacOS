@@ -94,18 +94,40 @@ struct RoastActionButtons: View {
     var body: some View {
         VStack(spacing: 10) {
             RoastButton(
-                title: "Start Saved Profile",
+                title: controlState.roastInProcess ? "Saved Profile Running" : "Start Saved Profile",
+                textColor: controlState.roastInProcess ? .red : .black,
                 action: {
-                    bleManager.startSavedProfileRoast()
+                    if controlState.roastInProcess {
+                        //bleManager.startCoolDown()
+                    } else {
+                        bleManager.startSavedProfileRoast()
+                    }
                 }
             )
             
+            RoastButton(
+                title: controlState.roastInProcess ? "Start Cool Down" : "Start Manual Roast",
+                textColor: controlState.roastInProcess ? .blue : .black,
+                action: {
+                    if controlState.roastInProcess {
+                        bleManager.startCoolDown()
+                    } else {
+                       // bleManager.startSavedProfileRoast()
+                    }
+                }
+            
+            
+            
+            
+            
+            /*
             RoastButton(
                 title: "Start Manual Roast",
                 action: {
                     controlState.displayText = "Starting Manual Roast..."
                     // TODO: Add manual roast command here
                 }
+                */
             )
         }
     }
@@ -113,13 +135,14 @@ struct RoastActionButtons: View {
 
 struct RoastButton: View {
     let title: String
+    var textColor: Color = .black  // Default to black
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
             Text(title)
                 .font(.openSansBold(size: 14))
-                .foregroundColor(.black)
+                .foregroundColor(textColor)
                 .frame(width: 200, height: 40)
                 .background(Color(red: 0.85, green: 0.75, blue: 0.6))
                 .offset(x: 10)
