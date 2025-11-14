@@ -25,6 +25,7 @@ class ControlState: ObservableObject {
     @Published var roastingTime: Double = 0
     @Published var coolingTime: Double = 0
     @Published var roastInProcess: Bool = false
+    @Published var coolInProcess: Bool = false
     
     let temperatureUnit: String = " F"
     

@@ -94,18 +94,54 @@ struct RoastActionButtons: View {
     var body: some View {
         VStack(spacing: 10) {
             RoastButton(
-                title: controlState.roastInProcess ? "Saved Profile Running" : "Start Saved Profile",
+                title: {
+                    if controlState.roastInProcess && controlState.coolInProcess {
+                        return "Cool Down Running"
+                    } else if controlState.roastInProcess && !controlState.coolInProcess {
+                        return "Saved Profile Running"
+                    } else {
+                        return "Start Saved Profile"
+                    }
+                }(),
                 textColor: controlState.roastInProcess ? .red : .black,
                 action: {
-                    if controlState.roastInProcess {
-                        //bleManager.startCoolDown()
+                    if controlState.roastInProcess && controlState.coolInProcess {//both true
+                       //nothing
+                    } else if controlState.roastInProcess && !controlState.coolInProcess {
+                        //nothing
                     } else {
                         bleManager.startSavedProfileRoast()
                     }
+
+                    
                 }
             )
             
             RoastButton(
+                title: {
+                    if controlState.roastInProcess && controlState.coolInProcess {
+                        return "End Roast"
+                    } else if controlState.roastInProcess && !controlState.coolInProcess {
+                        return "Start Cool Down"
+                    } else {
+                        return "Start Manual Roast"
+                    }
+                }(),
+                textColor: controlState.roastInProcess ? .blue : .black,
+                action: {
+                    if controlState.roastInProcess && controlState.coolInProcess {//both true
+                        bleManager.startEndRoast()
+                    } else if controlState.roastInProcess && !controlState.coolInProcess {
+                        bleManager.startCoolDown()
+                    } else {
+                        //nothing
+                    }
+
+                    
+                }
+                
+                
+             /*
                 title: controlState.roastInProcess ? "Start Cool Down" : "Start Manual Roast",
                 textColor: controlState.roastInProcess ? .blue : .black,
                 action: {
@@ -115,7 +151,7 @@ struct RoastActionButtons: View {
                        // bleManager.startSavedProfileRoast()
                     }
                 }
-            
+            */
             
             
             

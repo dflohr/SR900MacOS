@@ -53,6 +53,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     private var requestForMac: RequestForMac!
     private var startProfileRoast: StartProfileRoast_0x1A!
     private var coolDown: CoolDown_0x18!
+    private var stopRoast: StopRoast_0x19!
     
     // CoreBluetooth for proper name extraction
     private var centralManager: CBCentralManager!
@@ -87,6 +88,9 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         
         // Initialize CoolDown with the message protocol
         coolDown = CoolDown_0x18(messageProtocol: messageProtocol)
+        
+        // Initialize StopRoast with the message protocol
+        stopRoast = StopRoast_0x19(messageProtocol: messageProtocol)
         
         bleClient.runtimeLicense = "3131434A4D444E5852463230323631313035423554433134333600444E5842574A4746464246470030303030303030300000395A385655534248335A53530000"
         // Initialize IPWorksBLE
@@ -343,6 +347,21 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         print("❄️ Starting cooldown...")
         coolDown.CoolDown()
     }
+    /// Start cooldown process on the connected device
+    func startEndRoast() {
+        guard isConnected else {
+            print("⚠️ Cannot start endroast - device not connected")
+            return
+        }
+        
+        print("❄️ Starting end roast...")
+        stopRoast.stopRoast()
+    }
+    
+    
+    
+    
+    
     
     /// Toggle connection: Connect if disconnected, Disconnect if connected
     func toggleConnection() {

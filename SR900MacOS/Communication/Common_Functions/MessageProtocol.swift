@@ -1,3 +1,4 @@
+
 import Foundation
 import SwiftUI
 
@@ -164,3 +165,4 @@ struct MessageProtocol_Previews: PreviewProvider {
         }
     }
 }
+
