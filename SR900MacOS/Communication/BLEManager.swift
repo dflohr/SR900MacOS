@@ -60,6 +60,9 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     
     private var requestForMac: RequestForMac!
     private var startProfileRoast: StartProfileRoast_0x1A!
+    internal var manualRoastHandler: StartManualRoast_0x15!
+    internal var heatControl: HeatControl_0x01!
+    internal var fanControl: FanControl_0x01!
     private var coolDown: CoolDown_0x18!
     private var stopRoast: StopRoast_0x19!
     
@@ -100,11 +103,23 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         // Initialize StartProfileRoast with the message protocol
         startProfileRoast = StartProfileRoast_0x1A(messageProtocol: messageProtocol)
         
+        // Initialize StartManualRoast with the message protocol
+        manualRoastHandler = StartManualRoast_0x15(messageProtocol: messageProtocol)
+        
+        // Initialize HeatControl with the message protocol
+        heatControl = HeatControl_0x01(messageProtocol: messageProtocol)
+        
+        // Initialize FanControl with the message protocol
+        fanControl = FanControl_0x01(messageProtocol: messageProtocol)
+        
         // Initialize CoolDown with the message protocol
         coolDown = CoolDown_0x18(messageProtocol: messageProtocol)
         
         // Initialize StopRoast with the message protocol
         stopRoast = StopRoast_0x19(messageProtocol: messageProtocol)
+        
+        // Set up debounced slider update callback
+        setupSliderDebounceCallback()
         
         bleClient.runtimeLicense = "3131434A4D444E5852463230323631313035423554433134333600444E5842574A4746464246470030303030303030300000395A385655534248335A53530000"
         // Initialize IPWorksBLE
@@ -138,6 +153,38 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         // Start scanning for SR900 device automatically
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.startAutoScan()
+        }
+    }
+    
+    // MARK: - Slider Debouncing Setup
+    
+    /// Set up the callback for debounced slider updates
+    private func setupSliderDebounceCallback() {
+        controlState.onSliderUpdateDebounced = { [weak self] sliderType, newValue in
+            guard let self = self else { return }
+            
+            // Only send updates if roast is in process and connected
+            guard self.controlState.roastInProcess, self.isConnected else {
+                print("⚠️ Cannot send slider update: roast not in process or not connected")
+                return
+            }
+            
+            // Send manual roast command with updated values
+            let fanSpeed = UInt8(self.controlState.fanMotorLevel)
+            let heatSetting = UInt8(self.controlState.heatLevel)
+            let roastTime = UInt8(self.controlState.roastingTime)
+            let coolTime = UInt8(self.controlState.coolingTime)
+            
+            self.manualRoastHandler.startManualRoast(
+                fanSpeed: fanSpeed,
+                heatSetting: heatSetting,
+                roastTime: roastTime,
+                coolTime: coolTime,
+                controlState: nil  // Don't check roastInProcess since we're updating during roast
+            )
+            
+            let sliderName = sliderType == .fanMotor ? "Fan Motor" : "Heat Level"
+            print("📤 Sent debounced update for \(sliderName): \(Int(newValue))")
         }
     }
     
@@ -179,14 +226,15 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
             return
         }
         
-        // Create BLE_Devices directory path
-        let bleDevicesDir = appSupportDir.appendingPathComponent("BLE_Devices")
+        // Create Roast-Tech/BLE_Devices directory path
+        let roastTechDir = appSupportDir.appendingPathComponent("Roast-Tech")
+        let bleDevicesDir = roastTechDir.appendingPathComponent("BLE_Devices")
         let filename = "approved_devices.enc"
         let fileURL = bleDevicesDir.appendingPathComponent(filename)
         
         // Check if file exists
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
-            print("ℹ️ No saved MAC addresses found in BLE_Devices")
+            print("ℹ️ No saved MAC addresses found in Roast-Tech/BLE_Devices")
             savedMacAddresses = []
             return
         }
@@ -205,7 +253,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
             // Parse the records
             savedMacAddresses = parseMacRecords(from: decryptedContent)
             
-            print("✅ Loaded \(savedMacAddresses.count) saved MAC address(es) from BLE_Devices:")
+            print("✅ Loaded \(savedMacAddresses.count) saved MAC address(es) from Roast-Tech/BLE_Devices:")
             for record in savedMacAddresses {
                 if let mac = record["mac"],
                    let firstApproved = record["firstApproved"],
@@ -220,7 +268,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         }
     }
     
-    /// Save MAC address to BLE_Devices directory with encryption
+    /// Save MAC address to Roast-Tech/BLE_Devices directory with encryption
     /// Supports multiple MAC addresses in a single consolidated file
     func saveMacAddressToFile(_ macAddress: String) {
         // Get the Application Support directory
@@ -229,14 +277,15 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
             return
         }
         
-        // Create BLE_Devices directory path
-        let bleDevicesDir = appSupportDir.appendingPathComponent("BLE_Devices")
+        // Create Roast-Tech/BLE_Devices directory path
+        let roastTechDir = appSupportDir.appendingPathComponent("Roast-Tech")
+        let bleDevicesDir = roastTechDir.appendingPathComponent("BLE_Devices")
         
-        // Create directory if it doesn't exist
+        // Create directories if they don't exist
         do {
             try FileManager.default.createDirectory(at: bleDevicesDir, withIntermediateDirectories: true, attributes: nil)
         } catch {
-            print("⚠️ Error creating BLE_Devices directory: \(error)")
+            print("⚠️ Error creating Roast-Tech/BLE_Devices directory: \(error)")
             return
         }
         
@@ -328,8 +377,9 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
             return []
         }
         
-        // Create BLE_Devices directory path
-        let bleDevicesDir = appSupportDir.appendingPathComponent("BLE_Devices")
+        // Create Roast-Tech/BLE_Devices directory path
+        let roastTechDir = appSupportDir.appendingPathComponent("Roast-Tech")
+        let bleDevicesDir = roastTechDir.appendingPathComponent("BLE_Devices")
         let filename = "approved_devices.enc"
         let fileURL = bleDevicesDir.appendingPathComponent(filename)
         
@@ -747,6 +797,18 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         print("❄️ Starting cooldown...")
         coolDown.CoolDown()
     }
+    
+    /// Start manual roast with current control state settings
+    func startManualRoast() {
+        guard isConnected else {
+            print("⚠️ Cannot start manual roast - device not connected")
+            return
+        }
+        
+        print("🔥 Starting manual roast...")
+        manualRoastHandler.startManualRoast(from: controlState)
+    }
+    
     /// Start cooldown process on the connected device
     func startEndRoast() {
         guard isConnected else {

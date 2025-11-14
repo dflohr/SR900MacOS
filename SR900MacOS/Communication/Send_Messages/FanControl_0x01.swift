@@ -1,14 +1,14 @@
 //
-//  HeatControl_0x01.swift
+//  FanControl_0x01.swift
 //  SR900MacOS
 //
-//  Handler for Heat Control message (0x01)
+//  Handler for Fan Control message (0x01)
 //
 
 import Foundation
 import SwiftUI
 
-class HeatControl_0x01 {
+class FanControl_0x01 {
     
     // MARK: - Properties
     
@@ -29,20 +29,20 @@ class HeatControl_0x01 {
         self.init(messageProtocol: protocol_handler)
     }
     
-    // MARK: - Heat Control Message Function
+    // MARK: - Fan Control Message Function
     
-    /// Sends heat level control command to the roaster device
-    /// - Parameter heatLevel: Heat level value (0-9)
-    func sendHeatControl(heatLevel: UInt8) {
+    /// Sends fan speed control command to the roaster device
+    /// - Parameter fanSpeed: Fan speed value (0-9)
+    func sendFanControl(fanSpeed: UInt8) {
         // Check if BLE is connected before sending
         guard messageProtocol.BLE_Connected == 1 else {
-            print("⚠️ HeatControl: BLE not connected. Message not sent.")
+            print("⚠️ FanControl: BLE not connected. Message not sent.")
             return
         }
         
-        // Validate heat level parameter
-        guard heatLevel <= 9 else {
-            print("⚠️ HeatControl: Heat level must be 0-9. Received: \(heatLevel)")
+        // Validate fan speed parameter
+        guard fanSpeed <= 9 else {
+            print("⚠️ FanControl: Fan speed must be 0-9. Received: \(fanSpeed)")
             return
         }
         
@@ -53,15 +53,15 @@ class HeatControl_0x01 {
         messageProtocol.TX_B[messageProtocol.d_byte] = 0x00
         messageProtocol.d_byte += 1
         
-        // Set message type (byte 6) - 0x01 for Heat Control
+        // Set message type (byte 6) - 0x01 for Fan Control
         messageProtocol.TX_B[messageProtocol.d_byte] = 0x01
         messageProtocol.d_byte += 1
         
         // Add MAC address (bytes 7-12)
         messageProtocol.Add_MAC()
         
-        // Byte 13: Heat level value (0-9)
-        messageProtocol.TX_B[messageProtocol.d_byte] = heatLevel
+        // Byte 13: Fan speed value (0-9)
+        messageProtocol.TX_B[messageProtocol.d_byte] = fanSpeed
         messageProtocol.d_byte += 1
         
         // Remaining bytes (14-30) will be filled with random data by Message_Set()
@@ -75,18 +75,18 @@ class HeatControl_0x01 {
         // Set flag to ignore next status message
         shouldIgnoreNextStatus = true
         
-        print("✅ HeatControl: Sent heat level command (Heat: \(heatLevel))")
+        print("✅ FanControl: Sent fan speed command (Fan: \(fanSpeed))")
     }
     
-    /// Convenience function to send heat control using ControlState value
-    /// - Parameter controlState: The ControlState object containing current heat level
-    func sendHeatControl(from controlState: ControlState) {
-        let heatLevel = UInt8(controlState.heatLevel)
+    /// Convenience function to send fan control using ControlState value
+    /// - Parameter controlState: The ControlState object containing current fan motor level
+    func sendFanControl(from controlState: ControlState) {
+        let fanSpeed = UInt8(controlState.fanMotorLevel)
         
-        print("🔍 HeatControl Debug:")
-        print("   ControlState.heatLevel: \(controlState.heatLevel) -> UInt8: \(heatLevel)")
+        print("🔍 FanControl Debug:")
+        print("   ControlState.fanMotorLevel: \(controlState.fanMotorLevel) -> UInt8: \(fanSpeed)")
         
-        sendHeatControl(heatLevel: heatLevel)
+        sendFanControl(fanSpeed: fanSpeed)
     }
     
     // MARK: - Helper Functions

@@ -14,6 +14,9 @@ class StartManualRoast_0x15 {
     
     private var messageProtocol: MessageProtocol
     
+    // Track if next status message should be ignored
+    private(set) var shouldIgnoreNextStatus: Bool = false
+    
     // MARK: - Initialization
     
     init(messageProtocol: MessageProtocol) {
@@ -35,6 +38,7 @@ class StartManualRoast_0x15 {
     ///   - roastTime: Roasting time in minutes (0-15)
     ///   - coolTime: Cooling time in minutes (0-4)
     ///   - controlState: Optional ControlState to check if roast/cool is already in process
+    /// - Note: If your device requires minimum values > 0, you should validate before calling this function
     func startManualRoast(fanSpeed: UInt8, heatSetting: UInt8, roastTime: UInt8, coolTime: UInt8, controlState: ControlState? = nil) {
         // Check if BLE is connected before sending
         guard messageProtocol.BLE_Connected == 1 else {
@@ -51,22 +55,22 @@ class StartManualRoast_0x15 {
         }
         
         // Validate parameters
-        guard fanSpeed <= 9 , fanSpeed > 0  else {
+        guard fanSpeed <= 9 else {
             print("⚠️ StartManualRoast: Fan speed must be 0-9. Received: \(fanSpeed)")
             return
         }
         
-        guard heatSetting <= 9, heatSetting > 0      else {
+        guard heatSetting <= 9 else {
             print("⚠️ StartManualRoast: Heat setting must be 0-9. Received: \(heatSetting)")
             return
         }
         
-        guard roastTime <= 15, roastTime > 0 else {
+        guard roastTime <= 15 else {
             print("⚠️ StartManualRoast: Roast time must be 0-15 minutes. Received: \(roastTime)")
             return
         }
         
-        guard coolTime <= 4, coolTime > 0 else {
+        guard coolTime <= 4 else {
             print("⚠️ StartManualRoast: Cool time must be 0-4 minutes. Received: \(coolTime)")
             return
         }
@@ -116,6 +120,9 @@ class StartManualRoast_0x15 {
         // Set initialMessage to false after first message
         messageProtocol.initialMessage = false
         
+        // Set flag to ignore next status message
+        shouldIgnoreNextStatus = true
+        
         print("✅ StartManualRoast: Sent manual roast command (Fan: \(fanSpeed), Heat: \(heatSetting), Roast: \(roastTime)m, Cool: \(coolTime)m)")
     }
     
@@ -127,6 +134,12 @@ class StartManualRoast_0x15 {
         let roastTime = UInt8(controlState.roastingTime)
         let coolTime = UInt8(controlState.coolingTime)
         
+        print("🔍 StartManualRoast Debug:")
+        print("   ControlState.fanMotorLevel: \(controlState.fanMotorLevel) -> UInt8: \(fanSpeed)")
+        print("   ControlState.heatLevel: \(controlState.heatLevel) -> UInt8: \(heatSetting)")
+        print("   ControlState.roastingTime: \(controlState.roastingTime) -> UInt8: \(roastTime)")
+        print("   ControlState.coolingTime: \(controlState.coolingTime) -> UInt8: \(coolTime)")
+        
         startManualRoast(
             fanSpeed: fanSpeed,
             heatSetting: heatSetting,
@@ -137,6 +150,11 @@ class StartManualRoast_0x15 {
     }
     
     // MARK: - Helper Functions
+    
+    /// Reset the ignore flag after status message has been processed
+    func clearIgnoreFlag() {
+        shouldIgnoreNextStatus = false
+    }
     
     /// Get reference to the message protocol handler
     func getMessageProtocol() -> MessageProtocol {

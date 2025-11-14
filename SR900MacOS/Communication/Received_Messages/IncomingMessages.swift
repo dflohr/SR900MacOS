@@ -14,7 +14,7 @@ class IncomingMessageHandler: ObservableObject {
     private var checksumHolder: Int = 0
     
     // Make the bleManager property public or internal
-    public var bleManager: BLEManager?
+    public weak var bleManager: BLEManager?
 
     // Initialize with reference to control state and BLE manager
     init(controlState: ControlState, bleManager: BLEManager? = nil) {

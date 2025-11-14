@@ -39,6 +39,22 @@ extension IncomingMessageHandler {
             }
         }
         
+        // Reset all sliders to 0
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let controlState = self.controlState else { return }
+            
+            // Cancel any pending debounced slider updates
+            controlState.cancelPendingSliderUpdates()
+            
+            // Reset slider values
+            controlState.fanMotorLevel = 0
+            controlState.heatLevel = 0
+            controlState.roastingTime = 0
+            controlState.coolingTime = 0
+            
+            print("🔄 Sliders reset to 0")
+        }
+        
         // TODO: Add additional message parsing logic here
 
         

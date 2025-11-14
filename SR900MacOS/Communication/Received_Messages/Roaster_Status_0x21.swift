@@ -60,14 +60,35 @@ extension IncomingMessageHandler {
             heatLevel = 0
         }
         
+        // Check if we should ignore control updates due to recent command sent
+        let shouldIgnoreControls = (bleManager?.manualRoastHandler?.shouldIgnoreNextStatus ?? false) ||
+                                    (bleManager?.heatControl?.shouldIgnoreNextStatus ?? false) ||
+                                    (bleManager?.fanControl?.shouldIgnoreNextStatus ?? false)
         
         
         
         // Update control state on main thread
         DispatchQueue.main.async { [weak self] in
             self?.controlState?.beanTempValue = rawTemp
-            self?.controlState?.fanMotorLevel = Double(fanMotorLevel)
-            self?.controlState?.heatLevel = Double(heatLevel)
+            
+            // Only update fan and heat levels when roast is in process
+            // Otherwise, preserve the user's slider settings
+            // Also ignore updates if a control command was recently sent (next message after send)
+            if self?.controlState?.roastInProcess == true {
+                if !shouldIgnoreControls {
+                    self?.controlState?.fanMotorLevel = Double(fanMotorLevel)
+                    self?.controlState?.heatLevel = Double(heatLevel)
+                    print("🔄 Updated fanMotorLevel: \(fanMotorLevel), heatLevel: \(heatLevel) from roaster")
+                } else {
+                    print("⏳ Ignoring next status message after control command sent")
+                    // Clear the ignore flags after skipping this message
+                    self?.bleManager?.manualRoastHandler?.clearIgnoreFlag()
+                    self?.bleManager?.heatControl?.clearIgnoreFlag()
+                    self?.bleManager?.fanControl?.clearIgnoreFlag()
+                }
+            } else {
+                print("💾 Preserving user slider settings (roast not in process)")
+            }
            // print("🌡️ Updated temperature to: \(rawTemp)°F")
             
            
