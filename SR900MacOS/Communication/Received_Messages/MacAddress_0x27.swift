@@ -29,6 +29,50 @@ extension IncomingMessageHandler {
         
         print("✅ MAC Response → \(macString)")
         
+        // Check if MAC address is authorized
+        if let manager = self.bleManager {
+            var isAuthorized = false
+            var authorizationSource = ""
+            
+            // FIRST: Check if MAC address is in saved devices from BLE_Devices
+            if manager.isMacAddressSaved(macString) {
+                isAuthorized = true
+                authorizationSource = "BLE_Devices (previously connected)"
+                print("✅ MAC address found in saved devices (BLE_Devices)")
+                
+                // Show connection history
+                if let history = manager.getConnectionHistory(for: macString) {
+                    print("   First Approved: \(history.firstApproved ?? "Unknown")")
+                    print("   Last Connected: \(history.lastConnected ?? "Unknown")")
+                }
+            }
+            // SECOND: If not found in saved devices, check ApprovedMACAddresses.txt
+            else if manager.approvedMacAddresses.contains(macString) {
+                isAuthorized = true
+                authorizationSource = "ApprovedMACAddresses.txt"
+                print("✅ MAC address approved (ApprovedMACAddresses.txt)")
+            }
+            
+            // If not authorized by either method, disconnect
+            if !isAuthorized {
+                print("⚠️ MAC address \(macString) not authorized - disconnecting")
+                print("   Not found in: BLE_Devices OR ApprovedMACAddresses.txt")
+                DispatchQueue.main.async {
+                    manager.connectionStatus = "Unauthorized MAC: \(macString)"
+                }
+                // Disconnect after a brief delay to show the message
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    manager.disconnectDevice()
+                }
+                return
+            }
+            
+            print("✅ MAC address authorized via: \(authorizationSource)")
+            
+            // Save MAC address to BLE_Devices directory (updates last connected time)
+            manager.saveMacAddressToFile(macString)
+        }
+        
         // Update MessageProtocol headers using MAC bytes and keySeed
         if let manager = self.bleManager {
             let keySeed = manager.keySeed

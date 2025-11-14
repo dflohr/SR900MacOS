@@ -12,6 +12,7 @@ import SwiftUI
 import Combine
 import IPWorksBLE
 import CoreBluetooth
+import CryptoKit
 
 class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManagerDelegate {
     
@@ -34,6 +35,13 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     @Published var activityIN: Bool = false
     @Published var activityOUT: Bool = false
     @Published var keySeed: [UInt8] = [0, 0, 0, 0]  // 4-byte array for key seed (from bytes 7-10 when byte[6]=0x26)
+    
+    // List of approved MAC addresses loaded from ApprovedMACAddresses.txt
+    private(set) var approvedMacAddresses: Set<String> = []
+    
+    // Array of saved MAC addresses loaded from BLE_Devices directory
+    @Published var savedMacAddresses: [[String: String]] = []
+    
     @State private var df01ServiceId: String = ""
     @State private var df01CharacteristicId: String = ""
     @State private var df02ServiceId: String = ""
@@ -72,6 +80,12 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         centralManager = CBCentralManager(delegate: nil, queue: nil)
         
         super.init()
+        
+        // Load approved MAC addresses from file
+        loadApprovedMacAddresses()
+        
+        // Load saved MAC addresses from BLE_Devices directory
+        loadSavedMacAddresses()
         
         // Initialize message protocol
         messageProtocol = MessageProtocol()
@@ -124,6 +138,392 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         // Start scanning for SR900 device automatically
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.startAutoScan()
+        }
+    }
+    
+    // MARK: - MAC Address Management
+    
+    /// Load approved MAC addresses from ApprovedMACAddresses.txt
+    private func loadApprovedMacAddresses() {
+        // Try to find the file in the app bundle
+        guard let fileURL = Bundle.main.url(forResource: "ApprovedMACAddresses", withExtension: "txt") else {
+            print("⚠️ ApprovedMACAddresses.txt not found in bundle")
+            return
+        }
+        
+        do {
+            let content = try String(contentsOf: fileURL, encoding: .utf8)
+            let lines = content.components(separatedBy: .newlines)
+            
+            // Filter out empty lines and trim whitespace
+            let macAddresses = lines
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+            
+            approvedMacAddresses = Set(macAddresses)
+            
+            print("✅ Loaded \(approvedMacAddresses.count) approved MAC address(es):")
+            for mac in approvedMacAddresses.sorted() {
+                print("   - \(mac)")
+            }
+        } catch {
+            print("⚠️ Error reading ApprovedMACAddresses.txt: \(error)")
+        }
+    }
+    
+    /// Load saved MAC addresses from BLE_Devices directory on app launch
+    private func loadSavedMacAddresses() {
+        // Get the Application Support directory
+        guard let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            print("⚠️ Could not access Application Support directory")
+            return
+        }
+        
+        // Create BLE_Devices directory path
+        let bleDevicesDir = appSupportDir.appendingPathComponent("BLE_Devices")
+        let filename = "approved_devices.enc"
+        let fileURL = bleDevicesDir.appendingPathComponent(filename)
+        
+        // Check if file exists
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            print("ℹ️ No saved MAC addresses found in BLE_Devices")
+            savedMacAddresses = []
+            return
+        }
+        
+        // Read and decrypt the file
+        do {
+            let encryptedData = try Data(contentsOf: fileURL)
+            
+            // Decrypt the data
+            guard let decryptedContent = decryptData(encryptedData) else {
+                print("⚠️ Failed to decrypt saved MAC addresses")
+                savedMacAddresses = []
+                return
+            }
+            
+            // Parse the records
+            savedMacAddresses = parseMacRecords(from: decryptedContent)
+            
+            print("✅ Loaded \(savedMacAddresses.count) saved MAC address(es) from BLE_Devices:")
+            for record in savedMacAddresses {
+                if let mac = record["mac"],
+                   let firstApproved = record["firstApproved"],
+                   let lastConnected = record["lastConnected"] {
+                    print("   - \(mac)")
+                    print("     First: \(firstApproved) | Last: \(lastConnected)")
+                }
+            }
+        } catch {
+            print("⚠️ Error reading saved MAC addresses: \(error)")
+            savedMacAddresses = []
+        }
+    }
+    
+    /// Save MAC address to BLE_Devices directory with encryption
+    /// Supports multiple MAC addresses in a single consolidated file
+    func saveMacAddressToFile(_ macAddress: String) {
+        // Get the Application Support directory
+        guard let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            print("⚠️ Could not access Application Support directory")
+            return
+        }
+        
+        // Create BLE_Devices directory path
+        let bleDevicesDir = appSupportDir.appendingPathComponent("BLE_Devices")
+        
+        // Create directory if it doesn't exist
+        do {
+            try FileManager.default.createDirectory(at: bleDevicesDir, withIntermediateDirectories: true, attributes: nil)
+        } catch {
+            print("⚠️ Error creating BLE_Devices directory: \(error)")
+            return
+        }
+        
+        // Use a single consolidated file for all MAC addresses
+        let filename = "approved_devices.enc"
+        let fileURL = bleDevicesDir.appendingPathComponent(filename)
+        
+        // Create timestamp
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        let timestamp = dateFormatter.string(from: Date())
+        
+        // Structure to hold MAC address records
+        var macRecords: [[String: String]] = []
+        
+        // Check if file already exists
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            // File exists - decrypt and parse existing records
+            if let existingData = try? Data(contentsOf: fileURL),
+               let decryptedContent = decryptData(existingData) {
+                // Parse existing records
+                macRecords = parseMacRecords(from: decryptedContent)
+            }
+        }
+        
+        // Check if this MAC address already exists
+        if let existingIndex = macRecords.firstIndex(where: { $0["mac"] == macAddress }) {
+            // Update existing record - only update last connected time
+            macRecords[existingIndex]["lastConnected"] = timestamp
+            print("✅ Updated existing MAC address record: \(macAddress)")
+        } else {
+            // Add new record
+            let newRecord: [String: String] = [
+                "mac": macAddress,
+                "firstApproved": timestamp,
+                "lastConnected": timestamp
+            ]
+            macRecords.append(newRecord)
+            print("✅ Added new MAC address record: \(macAddress)")
+        }
+        
+        // Convert records to string format
+        let content = formatMacRecords(macRecords)
+        
+        // Encrypt the content
+        guard let encryptedData = encryptData(content) else {
+            print("⚠️ Failed to encrypt MAC address data")
+            return
+        }
+        
+        // Write encrypted data to file
+        do {
+            try encryptedData.write(to: fileURL, options: .atomic)
+            print("✅ Saved encrypted MAC address to: \(fileURL.path)")
+            print("   Total devices stored: \(macRecords.count)")
+            
+            // Update the in-memory array on the main thread
+            DispatchQueue.main.async { [weak self] in
+                self?.savedMacAddresses = macRecords
+            }
+        } catch {
+            print("⚠️ Error writing encrypted MAC address file: \(error)")
+        }
+    }
+    
+    /// Get array of just MAC address strings from saved devices
+    func getSavedMacAddressStrings() -> [String] {
+        return savedMacAddresses.compactMap { $0["mac"] }
+    }
+    
+    /// Check if a MAC address has been previously saved
+    func isMacAddressSaved(_ macAddress: String) -> Bool {
+        return savedMacAddresses.contains { $0["mac"] == macAddress }
+    }
+    
+    /// Get connection history for a specific MAC address
+    func getConnectionHistory(for macAddress: String) -> (firstApproved: String?, lastConnected: String?)? {
+        guard let record = savedMacAddresses.first(where: { $0["mac"] == macAddress }) else {
+            return nil
+        }
+        return (firstApproved: record["firstApproved"], lastConnected: record["lastConnected"])
+    }
+    
+    /// Retrieve all saved MAC addresses from encrypted file
+    func getAllSavedMacAddresses() -> [[String: String]] {
+        // Get the Application Support directory
+        guard let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            print("⚠️ Could not access Application Support directory")
+            return []
+        }
+        
+        // Create BLE_Devices directory path
+        let bleDevicesDir = appSupportDir.appendingPathComponent("BLE_Devices")
+        let filename = "approved_devices.enc"
+        let fileURL = bleDevicesDir.appendingPathComponent(filename)
+        
+        // Check if file exists
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            print("ℹ️ No saved MAC addresses found")
+            return []
+        }
+        
+        // Decrypt and parse records
+        if let existingData = try? Data(contentsOf: fileURL),
+           let decryptedContent = decryptData(existingData) {
+            let records = parseMacRecords(from: decryptedContent)
+            print("📋 Found \(records.count) saved MAC address(es)")
+            return records
+        }
+        
+        return []
+    }
+    
+    /// Print all saved MAC addresses to console (for debugging)
+    func printAllSavedMacAddresses() {
+        let records = getAllSavedMacAddresses()
+        
+        if records.isEmpty {
+            print("📋 No saved MAC addresses")
+            return
+        }
+        
+        print("📋 Saved MAC Addresses (\(records.count) total):")
+        print("=" + String(repeating: "=", count: 60))
+        
+        for (index, record) in records.enumerated() {
+            if let mac = record["mac"],
+               let firstApproved = record["firstApproved"],
+               let lastConnected = record["lastConnected"] {
+                print("\n[\(index + 1)] \(mac)")
+                print("    First Approved:  \(firstApproved)")
+                print("    Last Connected:  \(lastConnected)")
+            }
+        }
+        print("\n" + String(repeating: "=", count: 60))
+    }
+    
+    // MARK: - MAC Address Record Helpers
+    
+    /// Parse MAC address records from decrypted content
+    private func parseMacRecords(from content: String) -> [[String: String]] {
+        var records: [[String: String]] = []
+        let lines = content.components(separatedBy: .newlines)
+        
+        var currentRecord: [String: String] = [:]
+        
+        for line in lines {
+            let trimmedLine = line.trimmingCharacters(in: .whitespaces)
+            
+            if trimmedLine.isEmpty {
+                // Empty line indicates end of record
+                if !currentRecord.isEmpty {
+                    records.append(currentRecord)
+                    currentRecord = [:]
+                }
+            } else if trimmedLine.hasPrefix("MAC Address:") {
+                let mac = trimmedLine.replacingOccurrences(of: "MAC Address:", with: "")
+                    .trimmingCharacters(in: .whitespaces)
+                currentRecord["mac"] = mac
+            } else if trimmedLine.hasPrefix("First Approved:") {
+                let timestamp = trimmedLine.replacingOccurrences(of: "First Approved:", with: "")
+                    .trimmingCharacters(in: .whitespaces)
+                currentRecord["firstApproved"] = timestamp
+            } else if trimmedLine.hasPrefix("Last Connected:") {
+                let timestamp = trimmedLine.replacingOccurrences(of: "Last Connected:", with: "")
+                    .trimmingCharacters(in: .whitespaces)
+                currentRecord["lastConnected"] = timestamp
+            } else if trimmedLine == "---" {
+                // Separator line - end of record
+                if !currentRecord.isEmpty {
+                    records.append(currentRecord)
+                    currentRecord = [:]
+                }
+            }
+        }
+        
+        // Add the last record if it exists
+        if !currentRecord.isEmpty {
+            records.append(currentRecord)
+        }
+        
+        return records
+    }
+    
+    /// Format MAC address records to string
+    private func formatMacRecords(_ records: [[String: String]]) -> String {
+        var output = ""
+        
+        for (index, record) in records.enumerated() {
+            if let mac = record["mac"],
+               let firstApproved = record["firstApproved"],
+               let lastConnected = record["lastConnected"] {
+                
+                output += "MAC Address: \(mac)\n"
+                output += "First Approved: \(firstApproved)\n"
+                output += "Last Connected: \(lastConnected)\n"
+                
+                // Add separator between records (but not after the last one)
+                if index < records.count - 1 {
+                    output += "---\n"
+                }
+            }
+        }
+        
+        return output
+    }
+    
+    // MARK: - Encryption Helpers
+    
+    /// Get or create encryption key stored in Keychain
+    private func getEncryptionKey() -> SymmetricKey {
+        let keychainService = "com.sr900macos.bledevices"
+        let keychainAccount = "encryption-key"
+        
+        // Try to retrieve existing key from Keychain
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: keychainService,
+            kSecAttrAccount as String: keychainAccount,
+            kSecReturnData as String: true
+        ]
+        
+        var result: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        
+        if status == errSecSuccess, let keyData = result as? Data {
+            // Key exists in Keychain
+            return SymmetricKey(data: keyData)
+        } else {
+            // Generate new key and store in Keychain
+            let newKey = SymmetricKey(size: .bits256)
+            let keyData = newKey.withUnsafeBytes { Data($0) }
+            
+            let addQuery: [String: Any] = [
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrService as String: keychainService,
+                kSecAttrAccount as String: keychainAccount,
+                kSecValueData as String: keyData,
+                kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock
+            ]
+            
+            let addStatus = SecItemAdd(addQuery as CFDictionary, nil)
+            if addStatus == errSecSuccess {
+                print("🔐 Generated and stored new encryption key in Keychain")
+            } else {
+                print("⚠️ Failed to store encryption key in Keychain: \(addStatus)")
+            }
+            
+            return newKey
+        }
+    }
+    
+    /// Encrypt data using AES-GCM
+    private func encryptData(_ plaintext: String) -> Data? {
+        guard let plaintextData = plaintext.data(using: .utf8) else {
+            return nil
+        }
+        
+        let key = getEncryptionKey()
+        
+        do {
+            let sealedBox = try AES.GCM.seal(plaintextData, using: key)
+            
+            // Combine nonce + ciphertext + tag into a single Data object
+            guard let combined = sealedBox.combined else {
+                return nil
+            }
+            
+            return combined
+        } catch {
+            print("⚠️ Encryption error: \(error)")
+            return nil
+        }
+    }
+    
+    /// Decrypt data using AES-GCM
+    private func decryptData(_ encryptedData: Data) -> String? {
+        let key = getEncryptionKey()
+        
+        do {
+            let sealedBox = try AES.GCM.SealedBox(combined: encryptedData)
+            let decryptedData = try AES.GCM.open(sealedBox, using: key)
+            
+            return String(data: decryptedData, encoding: .utf8)
+        } catch {
+            print("⚠️ Decryption error: \(error)")
+            return nil
         }
     }
     

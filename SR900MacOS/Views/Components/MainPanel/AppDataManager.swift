@@ -82,18 +82,31 @@ class AppDataManager {
             
             // Create Roast-Tech root directory
             let roastTechURL = appSupportURL.appendingPathComponent(appName)
+            let rootExisted = fileManager.fileExists(atPath: roastTechURL.path)
             try createDirectoryIfNeeded(at: roastTechURL)
             applicationSupportURL = roastTechURL
+            
+            if rootExisted {
+                print("✅ Found existing Roast-Tech directory at: \(roastTechURL.path)")
+            } else {
+                print("✅ Created new Roast-Tech directory at: \(roastTechURL.path)")
+            }
             
             // Create all subdirectories
             for directory in AppDirectory.allCases {
                 let directoryURL = roastTechURL.appendingPathComponent(directory.rawValue)
+                let existed = fileManager.fileExists(atPath: directoryURL.path)
                 try createDirectoryIfNeeded(at: directoryURL)
                 directoryURLs[directory] = directoryURL
-                print("✅ Created directory: \(directory.rawValue)")
+                
+                if existed {
+                    print("✅ Found existing directory: \(directory.rawValue)")
+                } else {
+                    print("✅ Created new directory: \(directory.rawValue)")
+                }
             }
             
-            print("✅ Successfully initialized Roast-Tech directory structure at: \(roastTechURL.path)")
+            print("✅ Successfully initialized Roast-Tech directory structure")
             
         } catch {
             print("❌ Error setting up directory structure: \(error.localizedDescription)")
@@ -110,6 +123,65 @@ class AppDataManager {
                 attributes: nil
             )
         }
+    }
+    
+    /// Verifies all directories exist and creates any that are missing
+    /// Call this method when your application first loads to ensure directory structure is ready
+    /// - Returns: True if all directories exist or were successfully created, false if there were errors
+    @discardableResult
+    public func verifyAndCreateDirectories() -> Bool {
+        print("\n🔍 Verifying Roast-Tech directory structure...")
+        
+        guard let rootURL = applicationSupportURL else {
+            print("❌ Application support directory not initialized. Attempting to set up...")
+            setupDirectoryStructure()
+            return applicationSupportURL != nil
+        }
+        
+        var allDirectoriesValid = true
+        
+        // Check root directory
+        if !fileManager.fileExists(atPath: rootURL.path) {
+            print("⚠️ Root directory missing. Recreating...")
+            do {
+                try createDirectoryIfNeeded(at: rootURL)
+                print("✅ Recreated root directory")
+            } catch {
+                print("❌ Failed to create root directory: \(error.localizedDescription)")
+                allDirectoriesValid = false
+            }
+        } else {
+            print("✅ Root directory exists: \(rootURL.path)")
+        }
+        
+        // Check all subdirectories
+        for directory in AppDirectory.allCases {
+            if let directoryURL = directoryURLs[directory] {
+                if !fileManager.fileExists(atPath: directoryURL.path) {
+                    print("⚠️ Directory missing: \(directory.rawValue). Creating...")
+                    do {
+                        try createDirectoryIfNeeded(at: directoryURL)
+                        print("✅ Created missing directory: \(directory.rawValue)")
+                    } catch {
+                        print("❌ Failed to create directory \(directory.rawValue): \(error.localizedDescription)")
+                        allDirectoriesValid = false
+                    }
+                } else {
+                    print("✅ Directory exists: \(directory.rawValue)")
+                }
+            } else {
+                print("❌ Directory URL not found for: \(directory.rawValue)")
+                allDirectoriesValid = false
+            }
+        }
+        
+        if allDirectoriesValid {
+            print("✅ All directories verified successfully\n")
+        } else {
+            print("⚠️ Some directories could not be verified or created\n")
+        }
+        
+        return allDirectoriesValid
     }
     
     // MARK: - Public API
