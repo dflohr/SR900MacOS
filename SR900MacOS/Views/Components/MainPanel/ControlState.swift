@@ -58,6 +58,12 @@ class ControlState: ObservableObject {
     
     /// Handle slider value changes with debouncing when roast is in process
     private func handleSliderChange(for sliderType: SliderType, oldValue: Double, newValue: Double) {
+        // During cooling phase, only allow fan motor changes, block heat changes
+        if coolInProcess && sliderType == .heat {
+            print("⚠️ Ignoring heat level change during cooling phase")
+            return
+        }
+        
         // Only debounce if roast is in process and value actually changed
         guard roastInProcess, oldValue != newValue else {
             // If roast is not in process, send update immediately

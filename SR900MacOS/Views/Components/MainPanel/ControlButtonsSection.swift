@@ -29,7 +29,9 @@ struct TemperatureControlBar: View {
         HStack(spacing: 10) {
             HeatingCoolingButton(
                 mode: "Heating",
-                currentMode: $controlState.heatingCoolingMode
+                currentMode: $controlState.heatingCoolingMode,
+                roastInProcess: controlState.roastInProcess,
+                coolInProcess: controlState.coolInProcess
             )
             .offset(x: -2)
             
@@ -37,7 +39,9 @@ struct TemperatureControlBar: View {
             
             HeatingCoolingButton(
                 mode: "Cooling",
-                currentMode: $controlState.heatingCoolingMode
+                currentMode: $controlState.heatingCoolingMode,
+                roastInProcess: controlState.roastInProcess,
+                coolInProcess: controlState.coolInProcess
             )
         }
         .padding(.horizontal, 20)
@@ -48,20 +52,45 @@ struct TemperatureControlBar: View {
 struct HeatingCoolingButton: View {
     let mode: String
     @Binding var currentMode: String
+    let roastInProcess: Bool
+    let coolInProcess: Bool
+    
+    private var shouldShowFilled: Bool {
+        guard roastInProcess else { return false }
+        
+        if mode == "Heating" {
+            // Heating indicator is only filled when roasting and NOT cooling
+            return !coolInProcess
+        } else {
+            // Cooling indicator is filled when cooling is active
+            return coolInProcess
+        }
+    }
+    
+    private var indicatorColor: Color {
+        if shouldShowFilled && mode == "Heating" {
+            return .red
+        } else if shouldShowFilled && mode == "Cooling" {
+            return .blue  // Cooling indicator is blue when filled
+        } else {
+            return .black
+        }
+    }
     
     var body: some View {
         Button(action: {
-            currentMode = mode
+            // Button disabled - no action
         }) {
             HStack {
-                Image(systemName: currentMode == mode ? "circle.fill" : "circle")
+                Image(systemName: shouldShowFilled ? "circle.fill" : "circle")
                     .font(.openSans(size: 14))
+                    .foregroundColor(indicatorColor)
                     .offset(x: -20)
                 
                 Text(mode)
                     .font(.openSansBold(size: 14))
+                    .foregroundColor(.black)
             }
-            .foregroundColor(.black)
             .frame(width: 170, height: 40)
             .background(Color.white)
             .overlay(
@@ -70,6 +99,7 @@ struct HeatingCoolingButton: View {
             )
         }
         .buttonStyle(PlainButtonStyle())
+        .allowsHitTesting(false)
     }
 }
 

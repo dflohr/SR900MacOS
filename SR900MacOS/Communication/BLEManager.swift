@@ -169,18 +169,35 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                 return
             }
             
+            // Handle cooling phase
+            if self.controlState.coolInProcess {
+                // During cooling, only allow fan motor adjustments
+                if sliderType == .heat {
+                    print("⚠️ Cannot send heat level update during cooling phase")
+                    return
+                }
+                // Allow fan adjustments during cooling
+                print("✅ Allowing fan motor adjustment during cooling")
+            }
+            
             // Send manual roast command with updated values
             let fanSpeed = UInt8(self.controlState.fanMotorLevel)
             let heatSetting = UInt8(self.controlState.heatLevel)
             let roastTime = UInt8(self.controlState.roastingTime)
             let coolTime = UInt8(self.controlState.coolingTime)
             
+            // Determine which flag to use based on cooling state
+            let allowDuringRoast = !self.controlState.coolInProcess
+            let allowDuringCooling = self.controlState.coolInProcess && sliderType == .fanMotor
+            
             self.manualRoastHandler.startManualRoast(
                 fanSpeed: fanSpeed,
                 heatSetting: heatSetting,
                 roastTime: roastTime,
                 coolTime: coolTime,
-                controlState: nil  // Don't check roastInProcess since we're updating during roast
+                controlState: self.controlState,
+                allowDuringRoast: allowDuringRoast,
+                allowDuringCooling: allowDuringCooling
             )
             
             let sliderName = sliderType == .fanMotor ? "Fan Motor" : "Heat Level"
@@ -1153,6 +1170,10 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                   //  print("✓ Disconnected from SR900")
                    // print("═══════════════════════════════════")
                     
+                    // Reset sliders to 0
+                    self.controlState.fanMotorLevel = 0
+                    self.controlState.heatLevel = 0
+                    
                     // Clear the sr900Device to force a fresh discovery
                     self.sr900Device = nil
                    // print("ℹ️ Cleared device cache for fresh discovery")
@@ -1366,6 +1387,11 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
             // Reset roast state
             self.controlState.roastInProcess = false
             print("   ✓ Reset roastInProcess to false")
+            
+            // Reset sliders to 0
+            self.controlState.fanMotorLevel = 0
+            self.controlState.heatLevel = 0
+            print("   ✓ Reset sliders to 0")
             
             // Clear the device to force fresh discovery
             self.sr900Device = nil

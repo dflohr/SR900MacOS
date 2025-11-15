@@ -23,22 +23,35 @@ extension IncomingMessageHandler {
             return
         }
         
-        print("✅ Roast Start Acknowledged (0x22)")
+        print("✅ Cooling Started (0x23)")
         
-        // Check byte[5] to determine if roast is in process
+        // Check byte[5] to determine if cooling is in process
         if bytes[5] == 0x00 {
             DispatchQueue.main.async { [weak self] in
-                self?.controlState?.coolInProcess = true
-                print("🔥 Roast in process: true")
+                guard let self = self else { return }
+                
+                // Cooling has started - roast is still in process
+                // roastInProcess stays TRUE until 0x24 (Roast Finished) is received
+                self.controlState?.coolInProcess = true
+                
+                // Cancel any pending slider updates that might send unwanted 0x15 messages
+                self.controlState?.cancelPendingSliderUpdates()
+                
+                // The roaster typically sets heat to 0 during cooling
+                // This will be reported in status messages (0x21)
+                // We don't manually set heatLevel here to avoid triggering didSet
+                
+                print("❄️ Cooling started:")
+                print("   - roastInProcess: \(self.controlState?.roastInProcess ?? false) (unchanged)")
+                print("   - coolInProcess: true")
+                print("   - Cancelled pending slider updates")
             }
         } else {
             DispatchQueue.main.async { [weak self] in
                 self?.controlState?.coolInProcess = false
-                print("🔥 Roast in process: false")
+                print("❄️ Cooling process: false")
             }
         }
-        
-        // TODO: Add additional message parsing logic here
 
         
         

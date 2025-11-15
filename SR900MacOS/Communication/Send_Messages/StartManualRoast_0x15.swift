@@ -38,8 +38,11 @@ class StartManualRoast_0x15 {
     ///   - roastTime: Roasting time in minutes (0-15)
     ///   - coolTime: Cooling time in minutes (0-4)
     ///   - controlState: Optional ControlState to check if roast/cool is already in process
+    ///   - allowDuringRoast: Set to true to allow sending 0x15 during active roast (for slider updates). Default is false.
+    ///   - allowDuringCooling: Set to true to allow fan speed adjustments during cooling. Default is false.
     /// - Note: If your device requires minimum values > 0, you should validate before calling this function
-    func startManualRoast(fanSpeed: UInt8, heatSetting: UInt8, roastTime: UInt8, coolTime: UInt8, controlState: ControlState? = nil) {
+    /// - Note: During cooling, only fan speed adjustments are allowed (heat must be 0)
+    func startManualRoast(fanSpeed: UInt8, heatSetting: UInt8, roastTime: UInt8, coolTime: UInt8, controlState: ControlState? = nil, allowDuringRoast: Bool = false, allowDuringCooling: Bool = false) {
         // Check if BLE is connected before sending
         guard messageProtocol.BLE_Connected == 1 else {
             print("⚠️ StartManualRoast: BLE not connected. Message not sent.")
@@ -48,8 +51,29 @@ class StartManualRoast_0x15 {
         
         // Check roast/cool process if controlState is provided
         if let controlState = controlState {
-            guard !controlState.roastInProcess else {
-                print("⚠️ StartManualRoast: Cannot start - roast or cool process already in progress.")
+            // During cooling phase
+            if controlState.coolInProcess {
+                // If not explicitly allowed during cooling, block
+                if !allowDuringCooling {
+                    print("⚠️ StartManualRoast: Cannot send 0x15 - cooling process in progress (coolInProcess = true)")
+                    return
+                }
+                
+                // During cooling, heat must be 0 (only fan adjustments allowed)
+                if heatSetting != 0 {
+                    print("⚠️ StartManualRoast: Cannot send 0x15 during cooling with heat > 0. Heat must be 0 during cooling.")
+                    print("   Received: heat=\(heatSetting), Only fan adjustments are allowed during cooling.")
+                    return
+                }
+                
+                print("✅ Allowing fan adjustment during cooling (heat=0, fan=\(fanSpeed))")
+            }
+            
+            // If roast is in process and we're not explicitly allowing it, block the message
+            // This prevents starting a NEW roast when one is already running
+            if controlState.roastInProcess && !allowDuringRoast && !allowDuringCooling {
+                print("⚠️ StartManualRoast: Cannot send 0x15 - roast already in progress (roastInProcess = true)")
+                print("   Hint: This prevents starting a new roast. Use allowDuringRoast=true for slider updates.")
                 return
             }
         }
@@ -106,7 +130,11 @@ class StartManualRoast_0x15 {
         messageProtocol.TX_B[messageProtocol.d_byte] = fanSpeed
         messageProtocol.d_byte += 1
         
-
+        //HOLDER FOR AUTOROAST STOP
+        // Add pad (bytes 17 0x00)
+        // Byte 1
+        messageProtocol.TX_B[messageProtocol.d_byte] = 0x00
+        messageProtocol.d_byte += 1
         
   
         
@@ -139,13 +167,16 @@ class StartManualRoast_0x15 {
         print("   ControlState.heatLevel: \(controlState.heatLevel) -> UInt8: \(heatSetting)")
         print("   ControlState.roastingTime: \(controlState.roastingTime) -> UInt8: \(roastTime)")
         print("   ControlState.coolingTime: \(controlState.coolingTime) -> UInt8: \(coolTime)")
+        print("   roastInProcess: \(controlState.roastInProcess)")
+        print("   coolInProcess: \(controlState.coolInProcess)")
         
         startManualRoast(
             fanSpeed: fanSpeed,
             heatSetting: heatSetting,
             roastTime: roastTime,
             coolTime: coolTime,
-            controlState: controlState
+            controlState: controlState,
+            allowDuringRoast: false  // Initial start must have roastInProcess = false
         )
     }
     
