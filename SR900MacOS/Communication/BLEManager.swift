@@ -42,10 +42,10 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     // Array of saved MAC addresses loaded from BLE_Devices directory
     @Published var savedMacAddresses: [[String: String]] = []
     
-    @State private var df01ServiceId: String = ""
-    @State private var df01CharacteristicId: String = ""
-    @State private var df02ServiceId: String = ""
-    @State private var df02CharacteristicId: String = ""
+    private var df01ServiceId: String = ""
+    private var df01CharacteristicId: String = ""
+    private var df02ServiceId: String = ""
+    private var df02CharacteristicId: String = ""
     private let DF02_SERVICE_ID = "DF0000000000"
     private let DF02_CHARACTERISTIC_ID = "DF00DF020000"
     private let DF01_SERVICE_ID = "DF0000000000"
@@ -62,7 +62,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     private var startProfileRoast: StartProfileRoast_0x1A!
     internal var manualRoastHandler: StartManualRoast_0x15!
     internal var heatControl: HeatControl_0x01!
-    internal var fanControl: FanControl_0x01!
+    internal var fanControl: FanControl_0x02!
     private var coolDown: CoolDown_0x18!
     private var stopRoast: StopRoast_0x19!
     
@@ -110,7 +110,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         heatControl = HeatControl_0x01(messageProtocol: messageProtocol)
         
         // Initialize FanControl with the message protocol
-        fanControl = FanControl_0x01(messageProtocol: messageProtocol)
+        fanControl = FanControl_0x02(messageProtocol: messageProtocol)
         
         // Initialize CoolDown with the message protocol
         coolDown = CoolDown_0x18(messageProtocol: messageProtocol)
@@ -159,7 +159,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     // MARK: - Slider Debouncing Setup
     
     /// Set up the callback for debounced slider updates
-    private func setupSliderDebounceCallback() {
+    public func setupSliderDebounceCallback() {
         controlState.onSliderUpdateDebounced = { [weak self] sliderType, newValue in
             guard let self = self else { return }
             
@@ -168,6 +168,31 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                 print("⚠️ Cannot send slider update: roast not in process or not connected")
                 return
             }
+            
+            // CRITICAL: Handle profile roast differently than manual roast
+            if self.controlState.isProfileRoast {
+                // During profile roast: Allow BOTH fan and heat adjustments via individual commands
+                if sliderType == .fanMotor {
+                    print("✅ Profile Roast: Allowing fan adjustment via 0x02")
+                    
+                    // Note: FanControl automatically sets time-based ignore window
+                    // when sendFanControl() is called (1.5 second window)
+                    self.fanControl.sendFanControl(from: self.controlState)
+                    return
+                } else if sliderType == .heat {
+                    print("✅ Profile Roast: Allowing heat adjustment via 0x01")
+                    
+                    // Send heat control command
+                    self.heatControl.sendHeatControl(from: self.controlState)
+                    return
+                } else {
+                    print("⚠️ Unknown slider type during profile roast")
+                    return
+                }
+            }
+            
+            
+            
             
             // Handle cooling phase
             if self.controlState.coolInProcess {
@@ -204,7 +229,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
             print("📤 Sent debounced update for \(sliderName): \(Int(newValue))")
         }
     }
-    
+   
     // MARK: - MAC Address Management
     
     /// Load approved MAC addresses from ApprovedMACAddresses.txt
@@ -1455,3 +1480,4 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     
     
 }
+

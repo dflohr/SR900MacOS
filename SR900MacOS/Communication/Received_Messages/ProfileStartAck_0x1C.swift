@@ -29,11 +29,14 @@ extension IncomingMessageHandler {
         if bytes[5] == 0x01 {
             DispatchQueue.main.async { [weak self] in
                 self?.controlState?.roastInProcess = true
-                print("🔥 Roast in process: true")
+                self?.controlState?.isProfileRoast = true  // Mark as profile roast
+                print("🔥 Roast in process: true (Profile Roast)")
+                print("⚠️ DO NOT send 0x15 Start Manual Roast - profile roast is already started")
             }
         } else {
             DispatchQueue.main.async { [weak self] in
                 self?.controlState?.roastInProcess = false
+                self?.controlState?.isProfileRoast = false
                 print("🔥 Roast in process: false")
             }
         }

@@ -22,12 +22,18 @@ class StartProfileRoast_0x1A {
     // MARK: - Request MAC Message Function
     
     /// Starts a saved profile roast on the roaster device
+    /// 
+    /// Important: After sending 0x1A and receiving 0x1C Profile Start Acknowledged,
+    /// do NOT send 0x15 Start Manual Roast message. The profile roast is already started.
+    /// Sending 0x15 during a profile roast will interfere with the roast process.
     func startSavedProfileRoast() {
         // Check if BLE is connected before sending
         guard messageProtocol.BLE_Connected == 1 else {
             print("⚠️ StartProfileRoast: BLE not connected. Message not sent.")
             return
         }
+        
+        print("📤 Sending 0x1A Start Profile Roast message")
         
         // Get Header (bytes 0-4)
         messageProtocol.Message_Header()
