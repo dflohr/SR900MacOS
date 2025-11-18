@@ -24,7 +24,7 @@ struct FramedRectangle: View {
     var body: some View {
         ZStack {
             FramedRectangleBackground(width: width, height: height)
-            FramedRectangleBorders(width: width, height: height)
+            FramedRectangleBorders(width: width, height: height, topBorderHeight: number == "1" ? 40 : 60)
             FramedRectangleContent(
                 number: number,
                 width: width,
@@ -91,14 +91,15 @@ struct FramedRectangleBackground: View {
 struct FramedRectangleBorders: View {
     let width: CGFloat
     let height: CGFloat
+    let topBorderHeight: CGFloat
     
     var body: some View {
         Group {
             // Top border
             Rectangle()
                 .fill(Color.black)
-                .frame(width: width, height: 80)
-                .offset(y: -364)
+                .frame(width: width, height: topBorderHeight)
+                .offset(y: -(height/2 - topBorderHeight/2))
             
             // Bottom border
             Rectangle()
@@ -185,4 +186,61 @@ struct FramedRectangleContent: View {
             }
         }
     }
+}
+
+// MARK: - Previews
+#Preview("Rectangle 1 - Main Control Interface") {
+    FramedRectangle(
+        number: "1",
+        width: 600,
+        imageName: nil,
+        onGraphButtonPressed: { print("Graph pressed") },
+        onProfilesButtonPressed: { print("Profiles pressed") },
+        onSettingsButtonPressed: { print("Settings pressed") },
+        rectangle2Extended: .constant(false),
+        rectangle3Extended: .constant(false),
+        rectangle4Extended: .constant(false)
+    )
+}
+
+#Preview("Rectangle 2 - Graph") {
+    FramedRectangle(
+        number: "2",
+        width: 607,
+        imageName: nil,
+        onGraphButtonPressed: nil,
+        onProfilesButtonPressed: nil,
+        onSettingsButtonPressed: nil,
+        rectangle2Extended: .constant(false),
+        rectangle3Extended: .constant(false),
+        rectangle4Extended: .constant(false)
+    )
+}
+
+#Preview("Rectangle 3 - Profile Panel") {
+    FramedRectangle(
+        number: "3",
+        width: 410,
+        imageName: nil,
+        onGraphButtonPressed: nil,
+        onProfilesButtonPressed: nil,
+        onSettingsButtonPressed: nil,
+        rectangle2Extended: .constant(false),
+        rectangle3Extended: .constant(false),
+        rectangle4Extended: .constant(false)
+    )
+}
+
+#Preview("Rectangle 4 - Settings Panel") {
+    FramedRectangle(
+        number: "4",
+        width: 410,
+        imageName: nil,
+        onGraphButtonPressed: nil,
+        onProfilesButtonPressed: nil,
+        onSettingsButtonPressed: nil,
+        rectangle2Extended: .constant(false),
+        rectangle3Extended: .constant(false),
+        rectangle4Extended: .constant(false)
+    )
 }

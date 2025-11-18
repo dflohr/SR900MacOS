@@ -63,27 +63,3 @@ class RequestForMac {
     }
 }
 
-// MARK: - SwiftUI Preview
-/*
-struct RequestForMac_Previews: PreviewProvider {
-    static var previews: some View {
-        VStack(spacing: 20) {
-            Text("Request MAC Message")
-                .font(.title)
-            Text("Check console for output")
-                .foregroundColor(.secondary)
-            
-            Button("Send MAC Request") {
-                let macRequest = RequestForMac()
-                macRequest.setBLEConnected(true)
-                macRequest.RequestMacMessage()
-                
-                // Print the buffer
-                macRequest.getMessageProtocol().printBuffer()
-            }
-            .buttonStyle(.bordered)
-        }
-        .padding()
-    }
-}
-*/

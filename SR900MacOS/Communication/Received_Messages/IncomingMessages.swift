@@ -84,7 +84,7 @@ class IncomingMessageHandler: ObservableObject {
                 handleMacAddressMessage(bytes)
             
             case 0x28:  //ResAdditionalCoolingRequiredMessage(data);
-                break
+                handleAdditionalCoolingRequired(bytes)
             
         default:
             print("📨 Unknown message type: 0x\(String(format: "%02X", messageType))")
@@ -95,6 +95,7 @@ class IncomingMessageHandler: ObservableObject {
     
     // Temperature message (0x21) handler is implemented in Roaster_Status_0x21.swift extension
     // MAC address message (0x27) handler is implemented in MacAddress_027.swift extension
+    // Additional cooling message (0x28) handler is implemented in AdditionalCoolingRequired_0x28.swift extension
 }
 
 

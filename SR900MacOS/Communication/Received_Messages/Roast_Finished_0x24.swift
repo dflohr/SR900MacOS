@@ -56,6 +56,14 @@ extension IncomingMessageHandler {
             controlState.coolingTime = 0
             
             print("🔄 All sliders reset to 0 (fan, heat, roast time, cool time)")
+            
+            // Update connection status to show roast finished
+            self.bleManager?.connectionStatus = "Roast has Finished!"
+            
+            // Clear connection status after 2 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                self?.bleManager?.connectionStatus = ""
+            }
         }
         
         // Optional debug: Show only relevant bytes

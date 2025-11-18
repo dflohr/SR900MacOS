@@ -35,7 +35,8 @@ struct RoastGraphView: View {
                     Image(imageName)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: width - 40, height: 600)
+                    .frame(width: width - 40, height: 600)
+                       // .frame(width: width - 40, height: 600)
                 }
                 
                 // Header Section Overlaid on Image

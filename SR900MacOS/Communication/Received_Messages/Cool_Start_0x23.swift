@@ -1,5 +1,5 @@
 ///
-//  Cool_Start_0x24.swift
+//  Cool_Start_0x23.swift
 //  SR900MacOS
 //
 //  Handler for Profile Start Acknowledgment message (0x1C)
@@ -41,10 +41,18 @@ extension IncomingMessageHandler {
                 // This will be reported in status messages (0x21)
                 // We don't manually set heatLevel here to avoid triggering didSet
                 
+                // Update connection status to show cooling started
+                self.bleManager?.connectionStatus = "Cooling Started"
+                
                 print("❄️ Cooling started:")
                 print("   - roastInProcess: \(self.controlState?.roastInProcess ?? false) (unchanged)")
                 print("   - coolInProcess: true")
                 print("   - Cancelled pending slider updates")
+                
+                // Clear connection status after 2 seconds
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                    self?.bleManager?.connectionStatus = ""
+                }
             }
         } else {
             DispatchQueue.main.async { [weak self] in

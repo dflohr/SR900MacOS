@@ -13,6 +13,7 @@ import Combine
 import IPWorksBLE
 import CoreBluetooth
 import CryptoKit
+import AVFoundation
 
 class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManagerDelegate {
     
@@ -69,6 +70,11 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     // CoreBluetooth for proper name extraction
     private var centralManager: CBCentralManager!
     private var isCoreBTInitialized = false
+   
+    private var showIncomingMessages=false
+    
+    // Sound player for audio notifications
+    private var audioPlayer: AVAudioPlayer?
     
     // Track complete names extracted via CoreBluetooth (AD 0x09)
     private var completeNames: [String: String] = [:]
@@ -150,9 +156,38 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
           //  print("  - Using IPWorksBLE names only (faster but may be truncated)")
         }
         
-        // Start scanning for SR900 device automatically
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        // Display welcome message, play sound, and start scanning
+        DispatchQueue.main.async {
+            self.connectionStatus = "Welcome Roaster!"
+            self.playSound("tada")
+        }
+        
+        // Start scanning for SR900 device after 2 seconds
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            self.connectionStatus = ""
             self.startAutoScan()
+        }
+    }
+    
+    // MARK: - Sound Playback
+    
+    /// Play a sound file from the app bundle
+    /// - Parameter soundName: Name of the sound file (without extension)
+    private func playSound(_ soundName: String) {
+        // Try to find the sound file in the bundle
+        guard let soundURL = Bundle.main.url(forResource: soundName, withExtension: "aiff") else {
+            print("⚠️ Sound file '\(soundName).aiff' not found in bundle")
+            return
+        }
+        
+        do {
+            // Create and configure the audio player
+            audioPlayer = try AVAudioPlayer(contentsOf: soundURL)
+            audioPlayer?.prepareToPlay()
+            audioPlayer?.play()
+            print("🔊 Playing sound: \(soundName).aiff")
+        } catch {
+            print("⚠️ Error playing sound '\(soundName).aiff': \(error.localizedDescription)")
         }
     }
     
@@ -647,138 +682,15 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         // Note: Removed the temperature parsing code - already in IncomingMessageHandler
         
         // --- Update connection status with hex display ---
-        let hexDisplay = lastReceivedBytes.map { String(format: "%02X", $0) }.joined(separator: " ")
-
-        DispatchQueue.main.async {
-            self.connectionStatus = "Received: \(hexDisplay)"
-        }
-    }
-    /*
-    func onValue(serviceId: String,
-                 characteristicId: String,
-                 descriptorId: String,
-                 uuid: String,
-                 description: String,
-                 value: Data) {
-
-        // Always 34 bytes
-        let bytes = [UInt8](value)
-        lastReceivedBytes = bytes
-        
-        // Trigger IN activity indicator blink
-        blinkActivityIN()
-
-        let hex = bytes.map { String(format: "%02X", $0) }.joined(separator: " ")
-        print("📥 RX (\(uuid)) [34 bytes]: \(hex)")
-
-        // --- MAC RESPONSE CHECK (0x27) ---
-        // Keep MAC handling in BLEManager since it updates BLEManager properties
-        if bytes.count >= 14,
-           bytes[5] == 0x00,
-           bytes[6] == 0x27 {
-
-            let mac = bytes[8...13].map { String(format: "%02X", $0) }.joined(separator: ":")
-
-            print("✅ MAC Response → \(mac)")
-
-            DispatchQueue.main.async {
-                self.receivedMAC = mac
-                self.connectionStatus = "MAC: \(mac)"
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                self.connectionStatus = ""
-            }
-            return
-        }
-        
-        // --- DELEGATE MESSAGE PARSING TO IncomingMessageHandler ---
-        // All other message types are handled by the message parser
-        messageHandler.processMessage(bytes)
-        
-        // --- Normal displayed message ---
-        let hexDisplay = lastReceivedBytes.map { String(format: "%02X", $0) }.joined(separator: " ")
-
-        DispatchQueue.main.async {
-            self.connectionStatus = "Received: \(hexDisplay)"
-        }
-    }
-  
-    
-    func onValue(serviceId: String,
-                 characteristicId: String,
-                 descriptorId: String,
-                 uuid: String,
-                 description: String,
-                 value: Data) {
-
-        // Always 34 bytes
-        let bytes = [UInt8](value)
-        lastReceivedBytes = bytes
-        
-        // Trigger IN activity indicator blink
-        blinkActivityIN()
-
-        let hex = bytes.map { String(format: "%02X", $0) }.joined(separator: " ")
-        print("📥 RX (\(uuid)) [34 bytes]: \(hex)")
-
-        // --- MAC RESPONSE CHECK (0x27) ---
-        if bytes.count >= 14,
-           bytes[5] == 0x00,
-           bytes[6] == 0x27 {
-
-            let mac = bytes[8...13].map { String(format: "%02X", $0) }.joined(separator: ":")
-
-            print("✅ MAC Response → \(mac)")
-
-            DispatchQueue.main.async {
-                self.receivedMAC = mac
-                self.connectionStatus = "MAC: \(mac)"
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                self.connectionStatus = ""
-            }
-            return
-        }
-
-        if bytes.count > 7 && bytes[6] == 0x21 {
-            // Parse actual temperature from bytes
-            // TODO: Verify the correct byte positions for SR900 temperature data
-            // These byte positions are PLACEHOLDERS - adjust based on SR900 protocol documentation
-            
-            let rawTemp: Int
-            if bytes.count >= 10 {
-                // Option 1: If temperature is 16-bit value (2 bytes) - BIG ENDIAN
-                rawTemp = (Int(bytes[15]) << 8) | Int(bytes[16])
-                
-                // Option 2: If temperature is 16-bit value (2 bytes) - LITTLE ENDIAN
-                // rawTemp = (Int(bytes[9]) << 8) | Int(bytes[8])
-                
-                // Option 3: If temperature is single byte value
-                // rawTemp = Int(bytes[8])
-                
-                // Option 4: If temperature needs conversion formula:
-                // let rawValue = (Int(bytes[8]) << 8) | Int(bytes[9])
-                // rawTemp = (rawValue * 9 / 5) + 32  // Example: Celsius to Fahrenheit
-            } else {
-                rawTemp = 66 // Fallback value
-            }
+        if showIncomingMessages==true{
+            let hexDisplay = lastReceivedBytes.map { String(format: "%02X", $0) }.joined(separator: " ")
             
             DispatchQueue.main.async {
-                self.controlState.beanTempValue = rawTemp
-                print("🌡️ Updated temperature to: \(rawTemp)°F")
+                self.connectionStatus = "Received: \(hexDisplay)"
             }
         }
-        
-        
-        // --- Normal displayed message ---
-        let hexDisplay = lastReceivedBytes.map { String(format: "%02X", $0) }.joined(separator: " ")
-
-        DispatchQueue.main.async {
-            self.connectionStatus = "Received: \(hexDisplay)"
-        }
     }
-    
-    */
+
     //SENDING
     func sendCommand(_ bytes: [UInt8]) {  //From MessageProtocol
         let hex = bytes.map { String(format: "%02X", $0) }.joined(separator: " ")
@@ -963,6 +875,11 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
             } else {
                 connectionStatus = "No SR900 Found"
             }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
+                self?.connectionStatus = ""
+            }
+            
+            
             
            // print("═══════════════════════════════════")
         } catch {

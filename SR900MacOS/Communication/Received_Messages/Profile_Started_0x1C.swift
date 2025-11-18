@@ -30,8 +30,17 @@ extension IncomingMessageHandler {
             DispatchQueue.main.async { [weak self] in
                 self?.controlState?.roastInProcess = true
                 self?.controlState?.isProfileRoast = true  // Mark as profile roast
+                
+                // Update connection status to show profile roast started
+                self?.bleManager?.connectionStatus = "Profile Roast Started"
+                
                 print("🔥 Roast in process: true (Profile Roast)")
                 print("⚠️ DO NOT send 0x15 Start Manual Roast - profile roast is already started")
+                
+                // Clear connection status after 2 seconds
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                    self?.bleManager?.connectionStatus = ""
+                }
             }
         } else {
             DispatchQueue.main.async { [weak self] in
