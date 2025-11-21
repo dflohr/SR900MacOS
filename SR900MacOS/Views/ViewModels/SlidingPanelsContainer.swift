@@ -2,15 +2,16 @@ import SwiftUI
 
 struct SlidingPanelsContainer: View {
     @ObservedObject var viewModel: ContentViewModel
+    @State private var voltageSupply = "AVERAGE"
     
     var body: some View {
         ZStack {
-            SettingsPanel()
+            SettingsPanel(voltageSupply: $voltageSupply)
                 .zIndex(0)
                 // keep settings slightly right so it's flush at right edge
                 .offset(x: viewModel.rectangle4Offset + 570)
             
-            ProfilesPanel()
+            ProfilesPanel(voltageSupply: $voltageSupply)
                 .zIndex(1)
                 .offset(x: viewModel.rectangle3Offset + 520)
             
@@ -34,12 +35,15 @@ struct GraphPanel: View {
             onSettingsButtonPressed: nil,
             rectangle2Extended: .constant(false),
             rectangle3Extended: .constant(false),
-            rectangle4Extended: .constant(false)
+            rectangle4Extended: .constant(false),
+            voltageSupply: nil
         )
     }
 }
 
 struct ProfilesPanel: View {
+    @Binding var voltageSupply: String
+    
     var body: some View {
         FramedRectangle(
             number: "3",
@@ -50,12 +54,15 @@ struct ProfilesPanel: View {
             onSettingsButtonPressed: nil,
             rectangle2Extended: .constant(false),
             rectangle3Extended: .constant(false),
-            rectangle4Extended: .constant(false)
+            rectangle4Extended: .constant(false),
+            voltageSupply: $voltageSupply
         )
     }
 }
 
 struct SettingsPanel: View {
+    @Binding var voltageSupply: String
+    
     var body: some View {
         FramedRectangle(
             number: "4",
@@ -66,7 +73,8 @@ struct SettingsPanel: View {
             onSettingsButtonPressed: nil,
             rectangle2Extended: .constant(false),
             rectangle3Extended: .constant(false),
-            rectangle4Extended: .constant(false)
+            rectangle4Extended: .constant(false),
+            voltageSupply: $voltageSupply
         )
     }
 }

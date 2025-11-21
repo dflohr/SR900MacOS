@@ -29,6 +29,7 @@ struct TimeInputSection: View {
         }
         .padding(.horizontal, 15)
         .offset(y: 14)
+        .focusable(false)
     }
 }
 
@@ -154,6 +155,7 @@ struct TimeDigitButton: View {
         }
         .offset(x: offset.x, y: offset.y)
         .contentShape(Rectangle())
+        .focusable(false)  // Add this line
         .onTapGesture {
             // Only allow interaction when timer is not running
             guard !isTimerRunning else { return }
@@ -265,5 +267,6 @@ struct RoastButton: View {
                 .offset(x: 10)
         }
         .buttonStyle(PlainButtonStyle())
+        .focusable(false)
     }
 }

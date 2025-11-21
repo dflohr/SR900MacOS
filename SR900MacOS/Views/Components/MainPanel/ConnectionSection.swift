@@ -33,10 +33,11 @@ struct BLEConnectButton: View {
     
     /// Button should only be enabled when:
     /// 1. Already connected (to allow disconnect), OR
-    /// 2. connectionStatus is "SR900 Found" (device ready to connect), OR
-    /// 3. connectionStatus starts with "SR900 Found - AD 0x09:" (device found with complete name)
+    /// 2. Device has been found (sr900Device is not nil), OR
+    /// 3. connectionStatus is "SR900 Found" (device ready to connect), OR
+    /// 4. connectionStatus starts with "SR900 Found - AD 0x09:" (device found with complete name)
     /// BUT
-    /// 4. Button is disabled if a roast is in process (no connecting or disconnecting during roast)
+    /// 5. Button is disabled if a roast is in process (no connecting or disconnecting during roast)
     private var isButtonEnabled: Bool {
         // Disable button completely if roast is in process
         if controlState.roastInProcess {
@@ -44,7 +45,9 @@ struct BLEConnectButton: View {
         }
         
         // Normal enable logic when no roast in process
+        // Key: Check sr900Device first - if device found, button should be enabled even if status cleared
         return bleManager.isConnected || 
+               bleManager.sr900Device != nil ||
                bleManager.connectionStatus == "SR900 Found" ||
                bleManager.connectionStatus.hasPrefix("SR900 Found - AD 0x09:")
     }

@@ -21,6 +21,7 @@ struct ContentView: View {
                 .zIndex(2)
                 .environmentObject(bleManager)
                 SlidingPanelsContainer(viewModel: viewModel)
+                    .environmentObject(bleManager)
                     .offset(x: -570)
             }
             .padding()

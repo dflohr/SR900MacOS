@@ -13,13 +13,16 @@ struct SettingsPanelView: View {
     @Binding var rectangle2Extended: Bool
     @Binding var rectangle3Extended: Bool
     @Binding var rectangle4Extended: Bool
+    @Binding var voltageSupply: String
     let onGraphButtonPressed: (() -> Void)?
     let onProfilesButtonPressed: (() -> Void)?
     let onSettingsButtonPressed: (() -> Void)?
     
+    // Access to BLEManager to send settings
+    @EnvironmentObject var bleManager: BLEManager
+    
     @State private var temperatureIsFahrenheit = true
     @State private var thermistorIsExternal = true
-    @State private var voltageSupply = "AVERAGE"
     @State private var languageIsEnglish = true
     @State private var saveGraphs = true
     @State private var isImporterPresented = false
@@ -70,7 +73,23 @@ struct SettingsPanelView: View {
                 VoltageSelector(voltageSupply: $voltageSupply)
                 
                 // ✅ Send settings button
-                SettingsButton(title: "Send Settings To Roaster", systemIcon: "arrow.right")
+                Button(action: sendSettingsToRoaster) {
+                    HStack {
+                        Text("Send Settings To Roaster")
+                            .font(.openSansBold(size: 16))
+                        Image(systemName: "arrow.right")
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(
+                        bleManager.isConnected ? Color.blue : Color.gray
+                    )
+                    .cornerRadius(8)
+                }
+                .disabled(!bleManager.isConnected)
+                .buttonStyle(.plain)
+                .focusable(false)
                 
                 // ✅ Language
                 LanguageSelector(languageIsEnglish: $languageIsEnglish)
@@ -104,6 +123,7 @@ struct SettingsPanelView: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .focusable(false)
                     .fileImporter(
                         isPresented: $isImporterPresented,
                         allowedContentTypes: [.image, .item, .pdf],
@@ -155,5 +175,17 @@ struct SettingsPanelView: View {
             //                .offset(x: 22, y: 60)
         }
         //        .frame(width: width, height: 768)
+    }
+    
+    // MARK: - Actions
+    
+    /// Send current settings to the roaster via BLE
+    private func sendSettingsToRoaster() {
+        print("📤 Sending settings to roaster...")
+        bleManager.updateSettings.sendUpdateSettings(
+            temperatureIsFahrenheit: temperatureIsFahrenheit,
+            thermistorIsExternal: thermistorIsExternal,
+            voltageSupply: voltageSupply
+        )
     }
 }

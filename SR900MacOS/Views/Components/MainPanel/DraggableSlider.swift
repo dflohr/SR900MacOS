@@ -88,6 +88,7 @@ struct DraggableSlider: View {
                     .allowsHitTesting(false) // Let parent handle all gestures
                 }
                 .contentShape(Rectangle())
+                .focusable(false)
                 .gesture(
                     DragGesture(minimumDistance: 0)
                         .onChanged { gesture in
@@ -102,6 +103,7 @@ struct DraggableSlider: View {
             }
             .frame(height: 24)
         }
+        .focusable(false)
     }
     
     private func thumbPosition(in width: CGFloat) -> CGFloat {

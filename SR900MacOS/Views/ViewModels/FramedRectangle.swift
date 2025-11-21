@@ -20,6 +20,7 @@ struct FramedRectangle: View {
     @Binding var rectangle2Extended: Bool
     @Binding var rectangle3Extended: Bool
     @Binding var rectangle4Extended: Bool
+    var voltageSupply: Binding<String>?
     
     var body: some View {
         ZStack {
@@ -45,11 +46,12 @@ struct FramedRectangle: View {
             }
             
             
-            if number == "4" {
+            if number == "4", let voltageBinding = voltageSupply {
                 SettingsPanelView(
                     rectangle2Extended: $rectangle2Extended,
                     rectangle3Extended: $rectangle3Extended,
                     rectangle4Extended: $rectangle4Extended,
+                    voltageSupply: voltageBinding,
                     onGraphButtonPressed: onGraphButtonPressed,
                     onProfilesButtonPressed: onProfilesButtonPressed,
                     onSettingsButtonPressed: onSettingsButtonPressed,
@@ -58,11 +60,12 @@ struct FramedRectangle: View {
             }
             
             
-            if number == "3" {
+            if number == "3", let voltageBinding = voltageSupply {
                 ProfilePanelView(
                     rectangle2Extended: $rectangle2Extended,
                     rectangle3Extended: $rectangle3Extended,
                     rectangle4Extended: $rectangle4Extended,
+                    voltageSupply: voltageBinding,
                     onGraphButtonPressed: onGraphButtonPressed,
                     onProfilesButtonPressed: onProfilesButtonPressed,
                     onSettingsButtonPressed: onSettingsButtonPressed,
@@ -199,7 +202,8 @@ struct FramedRectangleContent: View {
         onSettingsButtonPressed: { print("Settings pressed") },
         rectangle2Extended: .constant(false),
         rectangle3Extended: .constant(false),
-        rectangle4Extended: .constant(false)
+        rectangle4Extended: .constant(false),
+        voltageSupply: nil
     )
 }
 
@@ -213,11 +217,13 @@ struct FramedRectangleContent: View {
         onSettingsButtonPressed: nil,
         rectangle2Extended: .constant(false),
         rectangle3Extended: .constant(false),
-        rectangle4Extended: .constant(false)
+        rectangle4Extended: .constant(false),
+        voltageSupply: nil
     )
 }
 
 #Preview("Rectangle 3 - Profile Panel") {
+    @Previewable @State var voltage = "AVERAGE"
     FramedRectangle(
         number: "3",
         width: 410,
@@ -227,11 +233,13 @@ struct FramedRectangleContent: View {
         onSettingsButtonPressed: nil,
         rectangle2Extended: .constant(false),
         rectangle3Extended: .constant(false),
-        rectangle4Extended: .constant(false)
+        rectangle4Extended: .constant(false),
+        voltageSupply: $voltage
     )
 }
 
 #Preview("Rectangle 4 - Settings Panel") {
+    @Previewable @State var voltage = "AVERAGE"
     FramedRectangle(
         number: "4",
         width: 410,
@@ -241,6 +249,7 @@ struct FramedRectangleContent: View {
         onSettingsButtonPressed: nil,
         rectangle2Extended: .constant(false),
         rectangle3Extended: .constant(false),
-        rectangle4Extended: .constant(false)
+        rectangle4Extended: .constant(false),
+        voltageSupply: $voltage
     )
 }

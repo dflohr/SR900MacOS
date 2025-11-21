@@ -66,6 +66,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
     internal var fanControl: FanControl_0x02!
     private var coolDown: CoolDown_0x18!
     private var stopRoast: StopRoast_0x19!
+    internal var updateSettings: UpdateSettings_0x2B!
     
     // CoreBluetooth for proper name extraction
     private var centralManager: CBCentralManager!
@@ -123,6 +124,9 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         
         // Initialize StopRoast with the message protocol
         stopRoast = StopRoast_0x19(messageProtocol: messageProtocol)
+        
+        // Initialize UpdateSettings with the message protocol
+        updateSettings = UpdateSettings_0x2B(messageProtocol: messageProtocol)
         
         // Set up debounced slider update callback
         setupSliderDebounceCallback()
@@ -872,11 +876,18 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                        // print("ℹ️ Final status: SR900 Found (AD 0x09 disabled)")
                     }
                 }
+                
+                // Clear status after 5 seconds, but only if still not scanning and not connected
+                // This gives time for CoreBluetooth packets to settle
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) { [weak self] in
+                    guard let self = self else { return }
+                    // Only clear if we're still not scanning and not connected
+                    if !self.isScanning && !self.isConnected {
+                        self.connectionStatus = ""
+                    }
+                }
             } else {
                 connectionStatus = "No SR900 Found"
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
-                self?.connectionStatus = ""
             }
             
             
@@ -1208,10 +1219,13 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
                           //  print("   🔄 Updating device name from '\(currentDevice.name)' to '\(completeName)'")
                             self.sr900Device = (name: completeName, macAddress: macAddress)
                         }
-                        // Always update status to show AD 0x09
-                        self.connectionStatus = "SR900 Found - AD 0x09: \(completeName)"
-                        if isNewOrUpdated {
-                          //  print("   ✓ Status updated with AD 0x09 name")
+                        // Only update status if we're actively scanning
+                        // This prevents status flickering from late CoreBluetooth packets
+                        if self.isScanning {
+                            self.connectionStatus = "SR900 Found - AD 0x09: \(completeName)"
+                            if isNewOrUpdated {
+                              //  print("   ✓ Status updated with AD 0x09 name")
+                            }
                         }
                     }
                 }

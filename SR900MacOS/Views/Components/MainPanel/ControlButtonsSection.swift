@@ -100,6 +100,7 @@ struct HeatingCoolingButton: View {
         }
         .buttonStyle(PlainButtonStyle())
         .allowsHitTesting(false)
+        .focusable(false)
     }
 }
 
