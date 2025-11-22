@@ -104,6 +104,12 @@ class StartManualRoast_0x15 {
         shouldIgnoreNextStatus = true
         print("🛡️ StartManualRoast: Ignore flag set BEFORE sending")
         
+        // Capture the current bean temperature for graph plotting start point
+        if let controlState = controlState {
+            controlState.roastStartTemperature = controlState.beanTempValue
+            print("📊 Captured roast start temperature: \(controlState.roastStartTemperature)°F (will plot at x=58, y≈440)")
+        }
+        
         // Get Header (bytes 0-4)
         messageProtocol.Message_Header()
         
@@ -171,6 +177,26 @@ class StartManualRoast_0x15 {
         print("   ControlState.coolingTime: \(controlState.coolingTime) -> UInt8: \(coolTime)")
         print("   roastInProcess: \(controlState.roastInProcess)")
         print("   coolInProcess: \(controlState.coolInProcess)")
+        
+        // VALIDATION: All required sliders must have values > 0
+        guard fanSpeed > 0 else {
+            print("⚠️ StartManualRoast: Cannot start roast - Fan Motor Level must be greater than 0")
+            return
+        }
+        
+        guard heatSetting > 0 else {
+            print("⚠️ StartManualRoast: Cannot start roast - Heat Level must be greater than 0")
+            return
+        }
+        
+        guard roastTime > 0 else {
+            print("⚠️ StartManualRoast: Cannot start roast - Roasting Time must be greater than 0")
+            return
+        }
+        
+        // Note: coolTime can be 0 (cooling is optional), so we don't validate it
+        
+        print("✅ All slider values valid (all > 0). Proceeding with manual roast...")
         
         startManualRoast(
             fanSpeed: fanSpeed,

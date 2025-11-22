@@ -45,6 +45,7 @@ class ControlState: ObservableObject {
     @Published var roastInProcess: Bool = false
     @Published var coolInProcess: Bool = false
     @Published var isProfileRoast: Bool = false  // Track if current roast is a profile roast
+    @Published var roastStartTemperature: Int = 0  // Capture temperature when roast command is sent (for graph plotting at x=58, y≈440)
     
     /// Flag to prevent slider updates from roaster (0x21 messages) from triggering 0x15 manual roast messages
     /// When true, fan/heat level changes are from the roaster and should NOT send new commands

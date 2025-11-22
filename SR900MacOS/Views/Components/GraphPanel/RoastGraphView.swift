@@ -16,27 +16,58 @@
 import SwiftUI
 
 struct RoastGraphView: View {
-    @State private var currentTemperature: Int = 0
-    @State private var elapsedTime: String = "00:00"
-    @State private var rateOfRise: String = "F / MINUTE"
-    @State private var fanLevel: Int = 5
-    @State private var heaterLevel: Int = 3
+    @ObservedObject var graphManager: GraphDataManager
+    @ObservedObject var controlState: ControlState
+    
     @State private var roastNotes: String = ""
     
     let width: CGFloat
     let imageName: String?
     
+    // Computed properties from graph manager and control state
+    private var currentTemperature: Int {
+        controlState.beanTempValue
+    }
+    
+    private var elapsedTime: String {
+        graphManager.getCurrentElapsedTime()
+    }
+    
+    private var rateOfRise: String {
+        graphManager.getFormattedRateOfRise()
+    }
+    
+    private var fanLevel: Int {
+        Int(controlState.fanMotorLevel)
+    }
+    
+    private var heaterLevel: Int {
+        Int(controlState.heatLevel)
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Graph Area with Image and Overlays
             ZStack(alignment: .top) {
-                // Background Graph Image
+                // Background Graph Image with Data Overlay
                 if let imageName = imageName {
-                    Image(imageName)
-                        .resizable()
-                        .scaledToFit()
+                    // Container to ensure perfect alignment
+                    GeometryReader { geometry in
+                        ZStack(alignment: .topLeading) {
+                            // Background graph image - NO scaling, use actual size
+                            Image(imageName)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: width - 40, height: 600)
+                            
+                            // Overlay MUST match exact dimensions
+                            GraphDataOverlay(graphManager: graphManager)
+                                .frame(width: width - 40, height: 600)
+                        }
+                        // Debug border removed - calibration complete
+                        // .border(Color.red, width: 1)
+                    }
                     .frame(width: width - 40, height: 600)
-                       // .frame(width: width - 40, height: 600)
                 }
                 
                 // Header Section Overlaid on Image
@@ -132,7 +163,7 @@ struct RoastGraphView: View {
                     
                     // First Crack Button
                     Button(action: {
-                        // TODO: Mark first crack time
+                        graphManager.markFirstCrack()
                     }) {
                         Text("FIRST\nCRACK")
                             .font(.openSansBold(size: 12))
@@ -147,10 +178,14 @@ struct RoastGraphView: View {
                             )
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .disabled(!controlState.roastInProcess)
                     
                     // Save Note Button
                     Button(action: {
-                        // TODO: Save note
+                        if !roastNotes.isEmpty {
+                            graphManager.addNote(roastNotes)
+                            roastNotes = ""  // Clear after saving
+                        }
                     }) {
                         Text("SAVE\nNOTE")
                             .font(.openSansBold(size: 12))
@@ -165,6 +200,7 @@ struct RoastGraphView: View {
                             )
                     }
                     .buttonStyle(PlainButtonStyle())
+                    .disabled(!controlState.roastInProcess || roastNotes.isEmpty)
                 }
             }
             .padding(.horizontal, 40)

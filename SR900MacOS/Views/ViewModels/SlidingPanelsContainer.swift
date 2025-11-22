@@ -3,6 +3,7 @@ import SwiftUI
 struct SlidingPanelsContainer: View {
     @ObservedObject var viewModel: ContentViewModel
     @State private var voltageSupply = "AVERAGE"
+    @EnvironmentObject var bleManager: BLEManager
     
     var body: some View {
         ZStack {
@@ -19,12 +20,22 @@ struct SlidingPanelsContainer: View {
                 .zIndex(-1)
                 // final tuned value for graphWidth = 607
                 .offset(x: viewModel.rectangle2Offset + 570)
+                .environmentObject(bleManager)
         }
     }
 }
 
 // MARK: - Individual Panels
 struct GraphPanel: View {
+    @EnvironmentObject var bleManager: BLEManager
+    @StateObject private var graphManager: GraphDataManager
+    
+    init() {
+        // Note: We can't access @EnvironmentObject in init, so we create a temporary
+        // graphManager without controlState, then update it in onAppear
+        _graphManager = StateObject(wrappedValue: GraphDataManager(controlState: nil))
+    }
+    
     var body: some View {
         FramedRectangle(
             number: "2",
@@ -36,8 +47,16 @@ struct GraphPanel: View {
             rectangle2Extended: .constant(false),
             rectangle3Extended: .constant(false),
             rectangle4Extended: .constant(false),
-            voltageSupply: nil
+            voltageSupply: nil,
+            graphManager: graphManager,
+            controlState: bleManager.controlState
         )
+        .onAppear {
+            // Connect graphManager to controlState when view appears
+            if graphManager.controlState == nil {
+                graphManager.controlState = bleManager.controlState
+            }
+        }
     }
 }
 

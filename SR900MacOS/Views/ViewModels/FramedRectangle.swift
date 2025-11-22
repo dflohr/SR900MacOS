@@ -22,6 +22,10 @@ struct FramedRectangle: View {
     @Binding var rectangle4Extended: Bool
     var voltageSupply: Binding<String>?
     
+    // Graph handling system (optional - only needed for number == "2")
+    var graphManager: GraphDataManager?
+    var controlState: ControlState?
+    
     var body: some View {
         ZStack {
             FramedRectangleBackground(width: width, height: height)
@@ -30,7 +34,9 @@ struct FramedRectangle: View {
                 number: number,
                 width: width,
                 height: height,
-                imageName: imageName
+                imageName: imageName,
+                graphManager: graphManager,
+                controlState: controlState
             )
             
             if number == "1" {
@@ -132,6 +138,10 @@ struct FramedRectangleContent: View {
     let height: CGFloat
     let imageName: String?
     
+    // Graph handling system
+    var graphManager: GraphDataManager?
+    var controlState: ControlState?
+    
     var body: some View {
         Group {
 //            if let imageName = imageName {
@@ -152,8 +162,21 @@ struct FramedRectangleContent: View {
                     .offset(y: -300)  // ✅ Move title up more
                 
                 // ✅ Add the graph view
-                RoastGraphView(width: width, imageName: imageName)
+                if let graphManager = graphManager, let controlState = controlState {
+                    RoastGraphView(
+                        graphManager: graphManager,
+                        controlState: controlState,
+                        width: width,
+                        imageName: imageName
+                    )
                     .offset(y: 20)
+                } else {
+                    // Fallback if graph system not initialized
+                    Text("Graph system not initialized")
+                        .font(.custom("OpenSans-Regular", size: 14))
+                        .foregroundColor(.red)
+                        .offset(y: 20)
+                }
             }
             
 //            if number == "2" {
@@ -208,6 +231,9 @@ struct FramedRectangleContent: View {
 }
 
 #Preview("Rectangle 2 - Graph") {
+    @Previewable @State var controlState = ControlState()
+    @Previewable @State var graphManager: GraphDataManager? = nil
+    
     FramedRectangle(
         number: "2",
         width: 607,
@@ -218,8 +244,15 @@ struct FramedRectangleContent: View {
         rectangle2Extended: .constant(false),
         rectangle3Extended: .constant(false),
         rectangle4Extended: .constant(false),
-        voltageSupply: nil
+        voltageSupply: nil,
+        graphManager: graphManager,
+        controlState: controlState
     )
+    .onAppear {
+        if graphManager == nil {
+            graphManager = GraphDataManager(controlState: controlState)
+        }
+    }
 }
 
 #Preview("Rectangle 3 - Profile Panel") {

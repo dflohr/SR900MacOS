@@ -742,7 +742,7 @@ class BLEManager: NSObject, ObservableObject, BLEClientDelegate, CBCentralManage
         }
         
         print("🔥 Starting saved profile roast...")
-        startProfileRoast.startSavedProfileRoast()
+        startProfileRoast.startSavedProfileRoast(controlState: controlState)
     }
     
     /// Start cooldown process on the connected device
